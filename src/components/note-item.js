@@ -38,7 +38,7 @@ class NoteItem extends HTMLElement {
           color: ${archived ? '#374151' : '#075985'};
           margin-bottom: 8px;
         }
-        .actions { display: flex; gap: 8px; }
+        .actions { display: flex; gap: 8px; flex-wrap: wrap; }
         button {
           background: #f3f4f6;
           border: 1px solid #e5e7eb;
@@ -60,6 +60,7 @@ class NoteItem extends HTMLElement {
         <h3></h3>
         <p></p>
         <div class="actions">
+          <button type="button" class="pin-btn">${pinned ? 'Lepas Sematan' : 'Sematkan'}</button>
           <button type="button" class="archive-btn">${archived ? 'Keluarkan dari Arsip' : 'Arsipkan'}</button>
           <button type="button" class="delete-btn danger">Hapus</button>
         </div>
@@ -68,6 +69,14 @@ class NoteItem extends HTMLElement {
 
     this.shadowRoot.querySelector('h3').textContent = title;
     this.shadowRoot.querySelector('p').textContent = body;
+
+    this.shadowRoot.querySelector('.pin-btn').addEventListener('click', () => {
+      this.dispatchEvent(new CustomEvent('pin', {
+        bubbles: true,
+        composed: true,
+        detail: { id, pinned: !pinned },
+      }));
+    });
 
     this.shadowRoot.querySelector('.archive-btn').addEventListener('click', () => {
       this.dispatchEvent(new CustomEvent('archive', {
