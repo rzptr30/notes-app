@@ -1,40 +1,42 @@
-# Notes App (Submission Proyek Pertama)
+# Notes App
 
-Aplikasi catatan sederhana menggunakan:
-- Vanilla JS + Web Components (4 custom elements)
-- CSS Grid untuk layout daftar (responsif auto-fill)
-- Realtime validation pada form
-- Custom attributes pada custom elements
-- Aksi per catatan: Arsipkan/Keluarkan dari Arsip, Hapus
+Aplikasi catatan sederhana dengan:
+- Vanilla JS + Web Components (4 custom elements).
+- CSS Grid untuk layout responsif (auto-fill).
+- Realtime validation pada form.
+- Aksi per catatan: Arsipkan/Keluarkan dari Arsip, Hapus.
 
-## Pemetaan Kriteria
+## Demo (GitHub Pages)
+Isi setelah deploy:
+- URL: https://rzptr30.github.io/notes-app/
 
-- Kriteria Wajib 1: Menampilkan daftar catatan dari data dumi
-  - Data resmi ditempel di `src/data/notes.js`, dirender ke `<note-list>` sebagai `<note-item>`.
-- Kriteria Wajib 2: Formulir tambah catatan
-  - Komponen `<note-form>` memiliki input `judul (text)` dan `isi (textarea)`.
-- Kriteria Wajib 3: CSS Grid sebagai layouting
-  - Komponen `<note-list>` menggunakan CSS Grid: `repeat(auto-fill, minmax(var(--min), 1fr))`.
-- Kriteria Wajib 4: Web Components minimal tiga
-  - `<app-bar>`, `<note-form>`, `<note-list>`, `<note-item>` (empat elemen).
+## Pemetaan Kriteria Penilaian
 
-Opsional (nilai lebih):
-- Tampilan menarik
-  - Palet warna netral, tipografi sistem, spacing rapi, elevasi halus.
-- Realtime validation
-  - Dilakukan di `<note-form>` pada event `input` (Constraint Validation API).
-- Custom attribute pada custom element
-  - `<app-bar title variant>`, `<note-form title-minlength body-minlength submit-text>`, `<note-list min gap>`, `<note-item pinned archived>`.
-- Responsive
-  - CSS Grid auto-fill; penyesuaian padding di mobile.
+Wajib
+1) Menampilkan daftar catatan dari data dummy
+   - Data resmi di `src/data/notes.js`, dirender ke `<note-list>` sebagai `<note-item>`.
+2) Formulir tambah catatan
+   - Komponen `<note-form>` (judul: input text, isi: textarea).
+3) CSS Grid sebagai layouting
+   - `<note-list>` menggunakan `grid-template-columns: repeat(auto-fill, minmax(var(--min), 1fr))`.
+4) Minimal tiga Web Components
+   - `<app-bar>`, `<note-form>`, `<note-list>`, `<note-item>` (total 4).
 
-## Cara Menjalankan
+Opsional
+- Tampilan menarik: tipografi sistem, palet netral, elevasi halus.
+- Realtime validation: pesan error saat mengetik (Constraint Validation API).
+- Custom attributes:
+  - `app-bar[title|variant]`
+  - `note-form[title-minlength|body-minlength|submit-text]`
+  - `note-list[min|gap]`
+  - `note-item[pinned|archived]`
+- Responsif: grid auto-fill; padding menyesuaikan di mobile.
 
-1. Buka `index.html` langsung di browser modern atau gunakan VS Code + ekstensi Live Server.
-2. Pastikan data sample tampil, bisa menambah catatan, arsip/hapus berjalan.
+## Cara Menjalankan Lokal
+- Buka `index.html` dengan Live Server (disarankan) atau langsung di browser modern.
+- Jika ada error module saat buka langsung, gunakan Live Server.
 
 ## Struktur Proyek
-
 ```
 .
 ├── index.html
@@ -50,40 +52,12 @@ Opsional (nilai lebih):
 └── README.md
 ```
 
-## Validasi Realtime
+## Checklist Uji Fungsional
 
-- Error muncul saat mengetik (`input`), tanpa harus klik submit.
-- Pesan tampil di bawah setiap field dengan `aria-live="polite"`.
-
-## Keamanan DOM
-
-- Konten input pengguna dipasang via `textContent` (bukan `innerHTML`).
-
-## Deploy ke GitHub Pages
-
-1. Inisialisasi repo git:
-   ```
-   git init
-   git add .
-   git commit -m "Initial commit: Notes App"
-   ```
-2. Buat repo di GitHub (mis. `notes-app`) lalu:
-   ```
-   git branch -M main
-   git remote add origin https://github.com/<username>/notes-app.git
-   git push -u origin main
-   ```
-3. Aktifkan Pages:
-   - GitHub → repo → Settings → Pages → Source: "Deploy from a branch"
-   - Branch: `main` dan folder `/ (root)` → Save
-4. Tunggu URL aktif, lalu uji di perangkat mobile dan desktop.
-
-## Tips Pemeriksaan
-
-- Buka DevTools → Elements: pastikan `<note-item>` muncul (bukti render DOM).
-- Coba ketik field form: error muncul realtime.
-- Klik Arsipkan/Keluarkan dari Arsip → status badge berubah.
-- Klik Hapus → item hilang dari daftar.
-- Pastikan tidak ada error di Console.
-
-Selamat mengerjakan submission!
+- [ ] Semua catatan sample tampil; `<note-list>` berisi banyak `<note-item>`.
+- [ ] Form tambah catatan bekerja; catatan baru muncul di paling atas.
+- [ ] Tombol Arsipkan/Keluarkan dari Arsip mengubah status badge dan gaya.
+- [ ] Tombol Hapus menghapus item (dengan konfirmasi).
+- [ ] Layout daftar menggunakan CSS Grid dan responsif.
+- [ ] Realtime validation aktif (pesan muncul saat mengetik).
+- [ ] Console bersih (tanpa error).
