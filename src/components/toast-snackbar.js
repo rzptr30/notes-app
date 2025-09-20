@@ -4,7 +4,6 @@ import './components/note-item.js';
 import './components/note-list.js';
 import './components/note-toolbar.js';
 import './components/confirm-dialog.js';
-import './components/toast-snackbar.js';
 import { notesData } from './data/notes.js';
 
 const STORAGE_KEY = 'notes-app/v1';
@@ -80,9 +79,6 @@ toolbarEl.setAttribute('theme', themeState);
 const confirmEl = document.createElement('confirm-dialog');
 document.body.appendChild(confirmEl);
 
-const toastEl = document.createElement('toast-snackbar');
-document.body.appendChild(toastEl);
-
 
 function sortForView(list) {
   return [...list].sort((a, b) => {
@@ -101,7 +97,7 @@ function applyFilterAndSearch(list, filter, query) {
     if (filter === 'active') return !n.archived;
     if (filter === 'archived') return n.archived;
     if (filter === 'pinned') return n.pinned === true;
-    return true;
+    return true; 
   });
   if (q) {
     out = out.filter(
@@ -154,6 +150,7 @@ function renderNotes(data) {
 
 function playFlipAnimations(oldPositions) {
   const easing = 'cubic-bezier(0.22, 1, 0.36, 1)';
+
   noteListEl.querySelectorAll('note-item').forEach((el) => {
     const id = el.getAttribute('note-id') || '';
     const prev = oldPositions.get(id);
@@ -209,7 +206,6 @@ noteFormEl.addEventListener('create', (e) => {
   notes.unshift(newNote);
   saveNotes(notes);
   rerender(true);
-  toastEl.show('Catatan ditambahkan', { variant: 'success' });
 });
 
 noteListEl.addEventListener('pin', (e) => {
@@ -219,7 +215,6 @@ noteListEl.addEventListener('pin', (e) => {
     target.pinned = pinned;
     saveNotes(notes);
     rerender(true);
-    toastEl.show(pinned ? 'Catatan disematkan' : 'Sematan dilepas', { variant: 'info' });
   }
 });
 
@@ -230,7 +225,6 @@ noteListEl.addEventListener('archive', (e) => {
     target.archived = archived;
     saveNotes(notes);
     rerender(true);
-    toastEl.show(archived ? 'Dipindahkan ke Arsip' : 'Dikeluarkan dari Arsip', { variant: 'info' });
   }
 });
 
@@ -257,13 +251,13 @@ noteListEl.addEventListener('delete', async (e) => {
           { duration: 180, easing: 'ease-in' }
         )
         .finished;
-    } catch {}
+    } catch {
+    }
   }
 
   notes = notes.filter((n) => n.id !== id);
   saveNotes(notes);
   rerender(true);
-  toastEl.show('Catatan dihapus', { variant: 'error', icon: '🗑️' });
 });
 
 toolbarEl.addEventListener('filter-change', (e) => {
@@ -278,7 +272,6 @@ toolbarEl.addEventListener('theme-toggle', () => {
   themeState = themeState === 'dark' ? 'light' : 'dark';
   applyTheme(themeState);
   toolbarEl.setAttribute('theme', themeState);
-  toastEl.show(themeState === 'dark' ? 'Mode gelap aktif' : 'Mode terang aktif', { variant: 'info' });
 });
 
 function nowStamp() {
@@ -298,7 +291,6 @@ function exportNotes() {
     URL.revokeObjectURL(a.href);
     a.remove();
   }, 0);
-  toastEl.show('Export JSON dimulai', { variant: 'info' });
 }
 function toBool(v) {
   if (typeof v === 'boolean') return v;
@@ -372,7 +364,6 @@ toolbarEl.addEventListener('import-data', async (e) => {
   localStorage.setItem(SEEDED_KEY, '1');
   saveNotes(notes);
   rerender(true);
-  toastEl.show('Impor data berhasil', { variant: 'success' });
 });
 toolbarEl.addEventListener('import-error', (e) => {
   alert(e.detail?.message || 'Terjadi kesalahan saat membaca file.');

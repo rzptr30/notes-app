@@ -1,63 +1,58 @@
-# Notes App
+# Notes App — Final Submission
 
-Aplikasi catatan sederhana dengan:
-- Vanilla JS + Web Components (4 custom elements).
-- CSS Grid untuk layout responsif (auto-fill).
-- Realtime validation pada form.
-- Aksi per catatan: Arsipkan/Keluarkan dari Arsip, Hapus.
+Aplikasi catatan berbasis Web Components dengan penyimpanan lokal, tema gelap/terang, filter, pencarian, import/export JSON, dialog konfirmasi kustom, serta animasi transisi (FLIP) dan micro-interactions.
 
-## Demo (GitHub Pages)
-Isi setelah deploy:
-- URL: https://rzptr30.github.io/notes-app/
+Demo
+- GitHub Pages: https://<username>.github.io/<repo>/
+  - Ganti <username>/<repo> dengan milikmu. Contoh: https://rzptr30.github.io/final-assessment/
 
-## Pemetaan Kriteria Penilaian
+Fitur Utama
+- Data awal (seeding) dan persistensi via localStorage
+- Tambah catatan dengan validasi realtime
+- Aksi per catatan: Sematkan/Lepas, Arsip/Unarsip, Hapus
+- Filter tab: Semua, Aktif, Arsip, Disematkan
+- Pencarian judul/isi (debounced)
+- Dark/Light mode toggle (persist)
+- Badge jumlah item per tab (dinamis, mengikuti pencarian)
+- Dialog konfirmasi hapus kustom (tema-aware, aksesibel)
+- Import/Export data JSON (backup/restore)
+- Animasi transisi (enter/exit/reorder via FLIP) + micro-interactions (hover/press, ring flash, toast)
+- Responsif dan A11y dasar
 
-Wajib
-1) Menampilkan daftar catatan dari data dummy
-   - Data resmi di `src/data/notes.js`, dirender ke `<note-list>` sebagai `<note-item>`.
-2) Formulir tambah catatan
-   - Komponen `<note-form>` (judul: input text, isi: textarea).
-3) CSS Grid sebagai layouting
-   - `<note-list>` menggunakan `grid-template-columns: repeat(auto-fill, minmax(var(--min), 1fr))`.
-4) Minimal tiga Web Components
-   - `<app-bar>`, `<note-form>`, `<note-list>`, `<note-item>` (total 4).
+Teknologi
+- Vanilla JS, Web Components (Shadow DOM)
+- CSS Variables untuk tema
+- Web Animations API
+- localStorage
 
-Opsional
-- Tampilan menarik: tipografi sistem, palet netral, elevasi halus.
-- Realtime validation: pesan error saat mengetik (Constraint Validation API).
-- Custom attributes:
-  - `app-bar[title|variant]`
-  - `note-form[title-minlength|body-minlength|submit-text]`
-  - `note-list[min|gap]`
-  - `note-item[pinned|archived]`
-- Responsif: grid auto-fill; padding menyesuaikan di mobile.
+Struktur Komponen
+- <app-bar>: header aplikasi
+- <note-form>: formulir tambah catatan (validasi realtime)
+- <note-toolbar>: filter, pencarian, badge counts, tema, import/export
+- <note-list>: kontainer grid responsif
+- <note-item>: kartu catatan + aksi
+- <confirm-dialog>: dialog konfirmasi kustom
+- <toast-snackbar>: notifikasi ringan
 
-## Cara Menjalankan Lokal
-- Buka `index.html` dengan Live Server (disarankan) atau langsung di browser modern.
-- Jika ada error module saat buka langsung, gunakan Live Server.
+Cara Menjalankan
+- Lokal: buka index.html dengan Live Server atau static server apa pun.
+  - Jika perlu reset data, hapus key localStorage berikut:
+    - notes-app/v1 dan notes-app/seeded
+- Produksi: aktifkan GitHub Pages (branch main, root) lalu akses URL Pages repositori.
 
-## Struktur Proyek
-```
-.
-├── index.html
-├── src
-│   ├── index.js
-│   ├── data
-│   │   └── notes.js
-│   └── components
-│       ├── app-bar.js
-│       ├── note-form.js
-│       ├── note-list.js
-│       └── note-item.js
-└── README.md
-```
+Import/Export
+- Export JSON: mengunduh file berisi seluruh data catatan saat ini.
+- Import JSON: memilih file .json akan menampilkan dialog konfirmasi sebelum menggantikan data.
 
-## Checklist Uji Fungsional
+Aksesibilitas
+- Label terhubung (aria-describedby), fokus jelas (focus-visible)
+- Dialog: aria-modal, trap fokus, Escape untuk menutup
+- Kontras dan warna mengikuti tema
 
-- [ ] Semua catatan sample tampil; `<note-list>` berisi banyak `<note-item>`.
-- [ ] Form tambah catatan bekerja; catatan baru muncul di paling atas.
-- [ ] Tombol Arsipkan/Keluarkan dari Arsip mengubah status badge dan gaya.
-- [ ] Tombol Hapus menghapus item (dengan konfirmasi).
-- [ ] Layout daftar menggunakan CSS Grid dan responsif.
-- [ ] Realtime validation aktif (pesan muncul saat mengetik).
-- [ ] Console bersih (tanpa error).
+Catatan Penilai
+- Uji di mobile viewport dan mode incognito (cek seeding awal).
+- Semua fitur wajib dan sebagian besar opsional sudah tersedia.
+- Animasi memakai WAAPI sehingga aman untuk komponen ber-Shadow DOM.
+
+Lisensi
+MIT — bebas digunakan untuk pembelajaran.

@@ -26,9 +26,11 @@ class NoteForm extends HTMLElement {
           border-radius: 10px;
           padding: 10px 12px;
           font: inherit;
+          transition: box-shadow .12s ease, border-color .12s ease, background-color .12s ease;
         }
-        .field input[type="text"]:focus-visible, .field textarea:focus-visible {
-          outline: 2px solid var(--primary); outline-offset: 2px;
+        .field input[type="text"]:focus, .field textarea:focus {
+          box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
+          border-color: var(--primary);
         }
         .error { color: var(--error); font-size: 0.9rem; min-height: 1.2em; }
         button[type="submit"] {
@@ -40,8 +42,10 @@ class NoteForm extends HTMLElement {
           border-radius: 10px;
           cursor: pointer;
           font-weight: 600;
+          transition: transform .08s ease, filter .12s ease, background-color .12s ease;
         }
         button[type="submit"]:hover { filter: brightness(0.95); }
+        button[type="submit"]:active { transform: scale(0.98); }
         button[type="submit"]:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
       </style>
       <form id="note-form" novalidate>

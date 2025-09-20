@@ -80,11 +80,14 @@ class NoteToolbar extends HTMLElement {
           display: inline-flex;
           align-items: center;
           gap: 6px;
+          transition: transform .08s ease, filter .12s ease, background-color .12s ease, border-color .12s ease, color .12s ease;
         }
+        .tabs button:hover { filter: brightness(1.05); }
+        .tabs button:active { transform: scale(0.98); }
         .tabs button[aria-pressed="true"] {
           background: var(--primary); border-color: var(--primary); color: #fff;
         }
-        .tabs button:focus-visible, input:focus-visible, .theme:focus-visible {
+        .tabs button:focus-visible, input:focus-visible, .theme:focus-visible, .export:focus-visible, .import:focus-visible {
           outline: 2px solid var(--primary); outline-offset: 2px;
         }
         .tab-badge {
@@ -98,12 +101,13 @@ class NoteToolbar extends HTMLElement {
           text-align: center;
           background: var(--badge-archived-bg);
           color: var(--badge-archived-fg);
+          transition: background-color .12s ease, color .12s ease;
         }
         .tabs button[aria-pressed="true"] .tab-badge {
           background: #ffffff; color: #111827;
         }
+        .spacer { flex: 1 1 auto; }
         .search {
-          margin-left: auto;
           display: flex;
           align-items: center;
           gap: 8px;
@@ -120,11 +124,21 @@ class NoteToolbar extends HTMLElement {
           min-width: 220px;
           background: var(--surface);
           color: var(--text);
+          transition: box-shadow .12s ease, border-color .12s ease;
         }
-        .theme {
+        .search input:focus {
+          box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
+          border-color: var(--primary);
+        }
+        .actions { display: flex; gap: 8px; align-items: center; }
+        .theme, .export, .import {
           background: var(--button-bg); border: 1px solid var(--border); color: var(--button-fg);
           padding: 6px 10px; border-radius: 999px; cursor: pointer; font: inherit;
+          transition: transform .08s ease, filter .12s ease, background-color .12s ease, border-color .12s ease, color .12s ease;
         }
+        .theme:hover, .export:hover, .import:hover { filter: brightness(1.05); }
+        .theme:active, .export:active, .import:active { transform: scale(0.98); }
+        input[type="file"] { display: none; }
       </style>
       <div class="toolbar">
         <div class="tabs" role="tablist" aria-label="Filter catatan">
@@ -134,12 +148,19 @@ class NoteToolbar extends HTMLElement {
           ${this._tab('pinned', 'Disematkan', filter, pinned)}
         </div>
 
+        <div class="spacer"></div>
+
         <div class="search">
           <label for="q">Cari catatan</label>
           <input id="q" type="search" placeholder="${placeholder}" autocomplete="off" />
         </div>
 
-        <button type="button" class="theme" title="${themeBtnTitle}">${themeBtnText}</button>
+        <div class="actions">
+          <button type="button" class="export" title="Unduh data sebagai JSON">Export JSON</button>
+          <button type="button" class="import" title="Impor data dari JSON">Import JSON</button>
+          <input id="import-file" type="file" accept=".json,application/json" />
+          <button type="button" class="theme" title="${themeBtnTitle}">${themeBtnText}</button>
+        </div>
       </div>
     `;
 
@@ -179,6 +200,34 @@ class NoteToolbar extends HTMLElement {
     const themeBtn = this.shadowRoot.querySelector('.theme');
     themeBtn.addEventListener('click', () => {
       this.dispatchEvent(new CustomEvent('theme-toggle', { bubbles: true, composed: true }));
+    });
+
+    const exportBtn = this.shadowRoot.querySelector('.export');
+    exportBtn.addEventListener('click', () => {
+      this.dispatchEvent(new CustomEvent('export-data', { bubbles: true, composed: true }));
+    });
+
+    const importBtn = this.shadowRoot.querySelector('.import');
+    const fileInput = this.shadowRoot.querySelector('#import-file');
+    importBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = String(reader.result || '');
+        this.dispatchEvent(new CustomEvent('import-data', {
+          bubbles: true, composed: true, detail: { text, filename: file.name }
+        }));
+        fileInput.value = '';
+      };
+      reader.onerror = () => {
+        this.dispatchEvent(new CustomEvent('import-error', {
+          bubbles: true, composed: true, detail: { message: 'Gagal membaca file.' }
+        }));
+        fileInput.value = '';
+      };
+      reader.readAsText(file);
     });
   }
 }

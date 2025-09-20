@@ -27,7 +27,6 @@ class ConfirmDialog extends HTMLElement {
     else this.removeAttribute('open');
   }
 
-  // Public API: open the dialog and return a Promise<boolean>
   openDialog(opts = {}) {
     const {
       message = 'Apakah kamu yakin ingin menghapus item ini?',
@@ -35,12 +34,10 @@ class ConfirmDialog extends HTMLElement {
       cancelText = 'Batal',
     } = opts;
 
-    // Set content
     this.setAttribute('message', message);
     this.setAttribute('confirm-text', confirmText);
     this.setAttribute('cancel-text', cancelText);
 
-    // If already open and a resolver exists, reject previous silently
     if (typeof this._resolver === 'function') {
       try { this._resolver(false); } catch {}
       this._resolver = null;
@@ -48,13 +45,11 @@ class ConfirmDialog extends HTMLElement {
 
     this.open = true;
 
-    // Focus handling after render
     queueMicrotask(() => {
       const confirmBtn = this.shadowRoot.querySelector('.confirm');
       confirmBtn?.focus();
     });
 
-    // Listen to Escape key
     document.addEventListener('keydown', this._onKeydown);
 
     return new Promise((resolve) => {
@@ -63,13 +58,37 @@ class ConfirmDialog extends HTMLElement {
   }
 
   closeDialog(result = false) {
-    this.open = false;
-    document.removeEventListener('keydown', this._onKeydown);
-    if (typeof this._resolver === 'function') {
-      const r = this._resolver;
-      this._resolver = null;
-      r(result);
-    }
+    const panel = this.shadowRoot.querySelector('.panel');
+    const backdrop = this.shadowRoot.querySelector('.backdrop');
+
+    const anims = [];
+    try {
+      anims.push(
+        panel.animate(
+          [
+            { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+            { transform: 'translate(-50%, -48%) scale(0.98)', opacity: 0 },
+          ],
+          { duration: 140, easing: 'ease-in' }
+        ).finished
+      );
+      anims.push(
+        backdrop.animate([{ opacity: 1 }, { opacity: 0 }], {
+          duration: 140,
+          easing: 'ease-in',
+        }).finished
+      );
+    } catch {}
+
+    Promise.allSettled(anims).finally(() => {
+      this.open = false;
+      document.removeEventListener('keydown', this._onKeydown);
+      if (typeof this._resolver === 'function') {
+        const r = this._resolver;
+        this._resolver = null;
+        r(result);
+      }
+    });
   }
 
   _onKeydown(e) {
@@ -78,19 +97,16 @@ class ConfirmDialog extends HTMLElement {
       e.preventDefault();
       this.closeDialog(false);
     }
-    // Simple focus trap between two buttons
     if (e.key === 'Tab') {
       const focusables = Array.from(this.shadowRoot.querySelectorAll('button'));
       if (focusables.length === 0) return;
       const currentIdx = focusables.indexOf(this.shadowRoot.activeElement);
       if (e.shiftKey) {
-        // backward
         if (currentIdx <= 0) {
           e.preventDefault();
           focusables[focusables.length - 1].focus();
         }
       } else {
-        // forward
         if (currentIdx === focusables.length - 1) {
           e.preventDefault();
           focusables[0].focus();
@@ -112,6 +128,7 @@ class ConfirmDialog extends HTMLElement {
           position: fixed; inset: 0;
           background: rgba(0,0,0,0.45);
           backdrop-filter: blur(1px);
+          animation: fadeIn .16s ease-out both;
         }
         .panel {
           position: fixed; left: 50%; top: 50%;
@@ -123,6 +140,14 @@ class ConfirmDialog extends HTMLElement {
           border-radius: 14px;
           box-shadow: var(--shadow);
           padding: 16px;
+          animation: popIn .18s cubic-bezier(0.22,1,0.36,1) both;
+        }
+        @keyframes popIn {
+          from { transform: translate(-50%, -48%) scale(0.98); opacity: 0; }
+          to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; } to { opacity: 1; }
         }
         h2 { margin: 0 0 8px; font-size: 1.1rem; }
         p { margin: 0 0 14px; }
@@ -137,7 +162,10 @@ class ConfirmDialog extends HTMLElement {
           border-radius: 10px;
           cursor: pointer;
           font: inherit;
+          transition: transform .08s ease, filter .12s ease, background-color .12s ease, border-color .12s ease;
         }
+        button:hover { filter: brightness(1.05); }
+        button:active { transform: scale(0.98); }
         button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
         .confirm {
           background: var(--danger-bg);
@@ -156,11 +184,9 @@ class ConfirmDialog extends HTMLElement {
       </div>
     `;
 
-    // Fill message
     const msgEl = this.shadowRoot.querySelector('#cd-desc');
     if (msgEl) msgEl.textContent = message;
 
-    // Events
     const backdrop = this.shadowRoot.querySelector('.backdrop');
     const cancelBtn = this.shadowRoot.querySelector('.cancel');
     const confirmBtn = this.shadowRoot.querySelector('.confirm');
