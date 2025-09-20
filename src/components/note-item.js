@@ -19,39 +19,40 @@ class NoteItem extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         article {
-          background: white;
-          border: 1px solid ${pinned ? '#fde047' : '#e5e7eb'};
+          background: var(--surface);
+          color: var(--text);
+          border: 1px solid ${pinned ? '#fde047' : 'var(--border)'};
           border-radius: 12px;
           padding: 12px;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-          opacity: ${archived ? 0.85 : 1};
+          box-shadow: var(--shadow);
+          opacity: ${archived ? 0.9 : 1};
         }
         h3 { margin: 0 0 6px; font-size: 1rem; }
-        p { margin: 0 0 10px; color: #374151; white-space: pre-wrap; }
-        .pin { color: #92400e; font-size: 0.8rem; margin-bottom: 4px; }
+        p { margin: 0 0 10px; color: var(--text); opacity: 0.95; white-space: pre-wrap; }
+        .pin { color: #f59e0b; font-size: 0.8rem; margin-bottom: 4px; }
         .badge {
           display: inline-block;
           font-size: 0.75rem;
           padding: 2px 8px;
           border-radius: 999px;
-          background: ${archived ? '#e5e7eb' : '#e0f2fe'};
-          color: ${archived ? '#374151' : '#075985'};
+          background: ${archived ? 'var(--badge-archived-bg)' : 'var(--badge-active-bg)'};
+          color: ${archived ? 'var(--badge-archived-fg)' : 'var(--badge-active-fg)'};
           margin-bottom: 8px;
         }
         .actions { display: flex; gap: 8px; flex-wrap: wrap; }
         button {
-          background: #f3f4f6;
-          border: 1px solid #e5e7eb;
-          color: #111827;
+          background: var(--button-bg);
+          border: 1px solid var(--border);
+          color: var(--button-fg);
           padding: 6px 10px;
           border-radius: 8px;
           cursor: pointer;
           font: inherit;
         }
-        button:hover { background: #e5e7eb; }
-        button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+        button:hover { filter: brightness(0.98); }
+        button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
         button.danger {
-          background: #fee2e2; border-color: #fecaca; color: #991b1b;
+          background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger-fg);
         }
       </style>
       <article>
@@ -86,8 +87,8 @@ class NoteItem extends HTMLElement {
       }));
     });
 
+    // Hapus: sekarang tanpa confirm() native; konfirmasi ditangani di index.js via confirm-dialog
     this.shadowRoot.querySelector('.delete-btn').addEventListener('click', () => {
-      if (!confirm('Hapus catatan ini?')) return;
       this.dispatchEvent(new CustomEvent('delete', {
         bubbles: true,
         composed: true,

@@ -7,13 +7,55 @@
     <script type="module" src="./src/index.js"></script>
     <style>
       :root {
+        /* Light theme tokens */
         --bg: #fafafa;
         --text: #1f2937;
         --muted: #6b7280;
         --primary: #2563eb;
-        --error: #c62828;
-        --radius: 12px;
+        --error: #ef4444;
+
+        --surface: #ffffff;
+        --border: #e5e7eb;
+        --shadow: 0 1px 4px rgba(0,0,0,0.06);
+
+        --button-bg: #f3f4f6;
+        --button-fg: #111827;
+
+        --danger-bg: #fee2e2;
+        --danger-border: #fecaca;
+        --danger-fg: #991b1b;
+
+        --badge-active-bg: #e0f2fe;
+        --badge-active-fg: #075985;
+        --badge-archived-bg: #e5e7eb;
+        --badge-archived-fg: #374151;
       }
+
+      :root[data-theme="dark"] {
+        /* Dark theme tokens */
+        --bg: #0f172a;
+        --text: #e5e7eb;
+        --muted: #94a3b8;
+        --primary: #60a5fa;
+        --error: #f87171;
+
+        --surface: #111827;
+        --border: #334155;
+        --shadow: 0 1px 6px rgba(0,0,0,0.5);
+
+        --button-bg: #1f2937;
+        --button-fg: #e5e7eb;
+
+        --danger-bg: #7f1d1d;
+        --danger-border: #b91c1c;
+        --danger-fg: #fecaca;
+
+        --badge-active-bg: #1e293b;
+        --badge-active-fg: #93c5fd;
+        --badge-archived-bg: #1f2937;
+        --badge-archived-fg: #cbd5e1;
+      }
+
       * { box-sizing: border-box; }
       body {
         margin: 0;
@@ -21,6 +63,7 @@
         color: var(--text);
         background: var(--bg);
         line-height: 1.5;
+        transition: background .2s ease, color .2s ease;
       }
       main {
         max-width: 1100px;
@@ -35,6 +78,7 @@
         justify-content: space-between;
         gap: 12px;
       }
+      small { color: var(--muted); }
       @media (max-width: 640px) {
         main { padding: 12px; }
       }
@@ -48,13 +92,11 @@
 
       <section class="header">
         <h2 style="margin:0;">Daftar Catatan</h2>
-        <small style="color:var(--muted)">Klik Sematkan/Arsipkan/Hapus pada tiap catatan</small>
+        <small>Klik Sematkan/Arsipkan/Hapus pada tiap catatan</small>
       </section>
 
-      <!-- Toolbar filter + pencarian -->
-      <note-toolbar filter="all" search-placeholder="Cari judul atau isi..."></note-toolbar>
+      <note-toolbar filter="all" search-placeholder="Cari judul atau isi..." theme="light"></note-toolbar>
 
-      <!-- CSS Grid auto-fill untuk responsive layout -->
       <note-list min="220" gap="12"></note-list>
     </main>
   </body>

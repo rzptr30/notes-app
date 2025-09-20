@@ -7,10 +7,12 @@ class NoteForm extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         form {
-          background: white;
+          background: var(--surface);
+          color: var(--text);
           padding: 16px;
+          border: 1px solid var(--border);
           border-radius: 12px;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+          box-shadow: var(--shadow);
           display: grid;
           gap: 12px;
         }
@@ -18,18 +20,20 @@ class NoteForm extends HTMLElement {
         .field label { font-weight: 600; }
         .field input[type="text"], .field textarea {
           width: 100%;
-          border: 1px solid #e5e7eb;
+          border: 1px solid var(--border);
+          background: var(--surface);
+          color: var(--text);
           border-radius: 10px;
           padding: 10px 12px;
           font: inherit;
         }
         .field input[type="text"]:focus-visible, .field textarea:focus-visible {
-          outline: 2px solid #2563eb; outline-offset: 2px;
+          outline: 2px solid var(--primary); outline-offset: 2px;
         }
-        .error { color: #c62828; font-size: 0.9rem; min-height: 1.2em; }
+        .error { color: var(--error); font-size: 0.9rem; min-height: 1.2em; }
         button[type="submit"] {
           justify-self: start;
-          background: #2563eb;
+          background: var(--primary);
           border: none;
           color: white;
           padding: 10px 14px;
@@ -38,7 +42,7 @@ class NoteForm extends HTMLElement {
           font-weight: 600;
         }
         button[type="submit"]:hover { filter: brightness(0.95); }
-        button[type="submit"]:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+        button[type="submit"]:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
       </style>
       <form id="note-form" novalidate>
         <div class="field">
@@ -88,7 +92,6 @@ class NoteForm extends HTMLElement {
 
     this.form.addEventListener('submit', (e) => {
       e.preventDefault();
-      // Paksa validasi realtime sebelum submit
       this.titleInput.dispatchEvent(new Event('input', { bubbles: true }));
       this.bodyInput.dispatchEvent(new Event('input', { bubbles: true }));
 

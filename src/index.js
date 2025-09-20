@@ -3,23 +3,46 @@ import './components/note-form.js';
 import './components/note-item.js';
 import './components/note-list.js';
 import './components/note-toolbar.js';
+import './components/confirm-dialog.js';
 import { notesData } from './data/notes.js';
 
 const STORAGE_KEY = 'notes-app/v1';
+const SEEDED_KEY = 'notes-app/seeded';
+const THEME_KEY = 'notes-app/theme';
 
-// Muat notes dari localStorage; fallback ke data sample
+/* ---------- Data seeding & storage ---------- */
+
+function seedNotesFromSample() {
+  return notesData.map((n) => ({
+    ...n,
+    archived: n.archived ?? false,
+    pinned: n.pinned ?? false,
+  }));
+}
+
 function loadNotes() {
   try {
+    const seeded = localStorage.getItem(SEEDED_KEY) === '1';
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [...notesData];
+
+    if (!seeded) {
+      const seededNotes = seedNotesFromSample();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(seededNotes));
+      localStorage.setItem(SEEDED_KEY, '1');
+      return seededNotes;
+    }
+
+    if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [...notesData];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return [...notesData];
+    const seededNotes = seedNotesFromSample();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(seededNotes));
+    localStorage.setItem(SEEDED_KEY, '1');
+    return seededNotes;
   }
 }
 
-// Simpan notes ke localStorage
 function saveNotes(list) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
@@ -28,17 +51,41 @@ function saveNotes(list) {
   }
 }
 
-// State
+/* ---------- Theme management ---------- */
+
+function getSystemTheme() {
+  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+function loadTheme() {
+  return localStorage.getItem(THEME_KEY) || getSystemTheme();
+}
+function applyTheme(theme) {
+  const t = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', t);
+  localStorage.setItem(THEME_KEY, t);
+}
+
+/* ---------- State ---------- */
+
 let notes = loadNotes();
 let filterState = 'all';   // all | active | archived | pinned
 let searchQuery = '';
+let themeState = loadTheme();
+applyTheme(themeState);
 
-// Elemen
+/* ---------- Elements ---------- */
+
 const noteListEl = document.querySelector('note-list');
 const noteFormEl = document.querySelector('note-form');
 const toolbarEl = document.querySelector('note-toolbar');
+toolbarEl.setAttribute('theme', themeState);
 
-// Util: urut tampilan — disematkan dulu, lalu terbaru
+// Create a single confirm dialog instance
+const confirmEl = document.createElement('confirm-dialog');
+document.body.appendChild(confirmEl);
+
+/* ---------- Utils ---------- */
+
 function sortForView(list) {
   return [...list].sort((a, b) => {
     const pa = a.pinned === true ? 1 : 0;
@@ -50,7 +97,6 @@ function sortForView(list) {
   });
 }
 
-// Util: filter + cari
 function applyFilterAndSearch(list, filter, query) {
   const q = String(query || '').trim().toLowerCase();
   let out = list.filter((n) => {
@@ -60,15 +106,29 @@ function applyFilterAndSearch(list, filter, query) {
     return true; // all
   });
   if (q) {
-    out = out.filter((n) =>
-      (n.title || '').toLowerCase().includes(q) ||
-      (n.body || '').toLowerCase().includes(q)
+    out = out.filter(
+      (n) =>
+        (n.title || '').toLowerCase().includes(q) ||
+        (n.body || '').toLowerCase().includes(q)
     );
   }
   return out;
 }
 
-// Render daftar catatan ke DOM
+function updateCounts() {
+  const countAll = applyFilterAndSearch(notes, 'all', searchQuery).length;
+  const countActive = applyFilterAndSearch(notes, 'active', searchQuery).length;
+  const countArchived = applyFilterAndSearch(notes, 'archived', searchQuery).length;
+  const countPinned = applyFilterAndSearch(notes, 'pinned', searchQuery).length;
+
+  toolbarEl.setAttribute('count-all', String(countAll));
+  toolbarEl.setAttribute('count-active', String(countActive));
+  toolbarEl.setAttribute('count-archived', String(countArchived));
+  toolbarEl.setAttribute('count-pinned', String(countPinned));
+}
+
+/* ---------- Render ---------- */
+
 function renderNotes(data) {
   noteListEl.innerHTML = '';
   const frag = document.createDocumentFragment();
@@ -85,13 +145,15 @@ function renderNotes(data) {
   noteListEl.appendChild(frag);
 }
 
-// Re-render menerapkan filter + cari
 function rerender() {
+  updateCounts();
   const filtered = applyFilterAndSearch(notes, filterState, searchQuery);
   renderNotes(filtered);
 }
 
-// Event: tambah catatan dari <note-form>
+/* ---------- Events ---------- */
+
+// note-form: create
 noteFormEl.addEventListener('create', (e) => {
   const { title, body } = e.detail;
   const newNote = {
@@ -107,8 +169,8 @@ noteFormEl.addEventListener('create', (e) => {
   rerender();
 });
 
-// Event: sematkan / lepas sematan dari <note-item>
-noteListEl.addEventListener('pin', (e) => {
+// note-item: pin/unpin
+noteListEl.addEventListener('pin', async (e) => {
   const { id, pinned } = e.detail;
   const target = notes.find((n) => n.id === id);
   if (target) {
@@ -118,7 +180,7 @@ noteListEl.addEventListener('pin', (e) => {
   }
 });
 
-// Event: arsip / unarsip dari <note-item>
+// note-item: archive/unarchive
 noteListEl.addEventListener('archive', (e) => {
   const { id, archived } = e.detail;
   const target = notes.find((n) => n.id === id);
@@ -129,31 +191,49 @@ noteListEl.addEventListener('archive', (e) => {
   }
 });
 
-// Event: hapus dari <note-item>
-noteListEl.addEventListener('delete', (e) => {
+// note-item: delete with custom confirm dialog
+noteListEl.addEventListener('delete', async (e) => {
   const { id } = e.detail;
+  const target = notes.find((n) => n.id === id);
+  const title = (target?.title || '').trim();
+  const ok = await confirmEl.openDialog({
+    message: title ? `Hapus catatan “${title}”? Tindakan ini tidak bisa dibatalkan.` : 'Hapus catatan ini? Tindakan ini tidak bisa dibatalkan.',
+    confirmText: 'Hapus',
+    cancelText: 'Batal',
+  });
+  if (!ok) return;
   notes = notes.filter((n) => n.id !== id);
   saveNotes(notes);
   rerender();
 });
 
-// Event: toolbar (filter + cari)
+// toolbar: filter, search, theme toggle
 toolbarEl.addEventListener('filter-change', (e) => {
-  filterState = e.detail.filter; // 'all' | 'active' | 'archived' | 'pinned'
+  filterState = e.detail.filter;
   rerender();
 });
 toolbarEl.addEventListener('search-change', (e) => {
   searchQuery = e.detail.query || '';
   rerender();
 });
+toolbarEl.addEventListener('theme-toggle', () => {
+  themeState = themeState === 'dark' ? 'light' : 'dark';
+  applyTheme(themeState);
+  toolbarEl.setAttribute('theme', themeState);
+});
 
-// Sinkronisasi antar tab (opsional)
+// sync antar tab
 window.addEventListener('storage', (ev) => {
   if (ev.key === STORAGE_KEY) {
     notes = loadNotes();
     rerender();
   }
+  if (ev.key === THEME_KEY) {
+    themeState = loadTheme();
+    applyTheme(themeState);
+    toolbarEl.setAttribute('theme', themeState);
+  }
 });
 
-// Tampilkan data awal
+// initial render
 rerender();
