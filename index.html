@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Notes App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script type="module" src="./src/index.js"></script>
+    <style>
+      :root {
+        --bg: #fafafa;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --primary: #2563eb;
+        --error: #c62828;
+        --radius: 12px;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, sans-serif;
+        color: var(--text);
+        background: var(--bg);
+        line-height: 1.5;
+      }
+      main {
+        max-width: 1100px;
+        padding: 16px;
+        margin: 0 auto;
+        display: grid;
+        gap: 20px;
+      }
+      section.header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      @media (max-width: 640px) {
+        main { padding: 12px; }
+      }
+    </style>
+  </head>
+  <body>
+    <app-bar title="Notes App" variant="elevated"></app-bar>
+
+    <main>
+      <note-form title-minlength="3" body-minlength="5" submit-text="Tambah Catatan"></note-form>
+
+      <section class="header">
+        <h2 style="margin:0;">Daftar Catatan</h2>
+        <small style="color:var(--muted)">Klik Arsipkan/Hapus pada tiap catatan</small>
+      </section>
+
+      <!-- CSS Grid auto-fill untuk responsive layout -->
+      <note-list min="220" gap="12"></note-list>
+    </main>
+  </body>
+</html>
