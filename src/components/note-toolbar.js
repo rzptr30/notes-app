@@ -19,7 +19,6 @@ class NoteToolbar extends HTMLElement {
   }
 
   attributeChangedCallback() { this.render(); }
-
   connectedCallback() { this.render(); }
 
   get filter() {
@@ -107,11 +106,7 @@ class NoteToolbar extends HTMLElement {
           background: #ffffff; color: #111827;
         }
         .spacer { flex: 1 1 auto; }
-        .search {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
+        .search { display: flex; align-items: center; gap: 8px; }
         .search label {
           position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
           overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
@@ -163,7 +158,6 @@ class NoteToolbar extends HTMLElement {
         </div>
       </div>
     `;
-
     this.attachEvents();
   }
 
@@ -232,4 +226,6 @@ class NoteToolbar extends HTMLElement {
   }
 }
 
-customElements.define('note-toolbar', NoteToolbar);
+if (!customElements.get('note-toolbar')) {
+  customElements.define('note-toolbar', NoteToolbar);
+}

@@ -6,7 +6,17 @@ class NoteForm extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this.shadowRoot.innerHTML = `
       <style>
+        :host {
+          display: block;
+          /* lebar maksimum control (judul, isi, tombol) */
+          --form-control-max: 720px;
+        }
+
+        /* Kartu form full width supaya sejajar dengan toolbar */
         form {
+          width: 100%;
+          margin: 0;
+
           background: var(--surface);
           color: var(--text);
           padding: 16px;
@@ -16,9 +26,18 @@ class NoteForm extends HTMLElement {
           display: grid;
           gap: 12px;
         }
+
+        /* Batasi lebar masing-masing baris field dan tombol, dan center */
+        .row {
+          width: min(var(--form-control-max), 100%);
+          margin-inline: auto;
+        }
+
         .field { display: grid; gap: 6px; }
         .field label { font-weight: 600; }
-        .field input[type="text"], .field textarea {
+
+        .field input[type="text"],
+        .field textarea {
           width: 100%;
           border: 1px solid var(--border);
           background: var(--surface);
@@ -28,13 +47,34 @@ class NoteForm extends HTMLElement {
           font: inherit;
           transition: box-shadow .12s ease, border-color .12s ease, background-color .12s ease;
         }
-        .field input[type="text"]:focus, .field textarea:focus {
+        .field input[type="text"]:focus,
+        .field textarea:focus {
           box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
           border-color: var(--primary);
         }
-        .error { color: var(--error); font-size: 0.9rem; min-height: 1.2em; }
-        button[type="submit"] {
-          justify-self: start;
+
+        /* Textarea rapi */
+        .field textarea {
+          resize: vertical;     /* ubah ke 'none' jika mau benar-benar fixed */
+          height: 140px;        /* tinggi default nyaman */
+          min-height: 120px;
+          max-height: 360px;
+          overflow: auto;
+        }
+
+        .error {
+          color: var(--error);
+          font-size: 0.9rem;
+          min-height: 1.2em;
+        }
+
+        /* Tombol ada di dalam .row agar ikut max width yang sama */
+        .actions {
+          display: flex;
+          align-items: center;
+          justify-content: flex-start;
+        }
+        .actions button[type="submit"] {
           background: var(--primary);
           border: none;
           color: white;
@@ -44,22 +84,31 @@ class NoteForm extends HTMLElement {
           font-weight: 600;
           transition: transform .08s ease, filter .12s ease, background-color .12s ease;
         }
-        button[type="submit"]:hover { filter: brightness(0.95); }
-        button[type="submit"]:active { transform: scale(0.98); }
-        button[type="submit"]:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+        .actions button[type="submit"]:hover { filter: brightness(0.95); }
+        .actions button[type="submit"]:active { transform: scale(0.98); }
+        .actions button[type="submit"]:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+        @media (max-width: 480px) {
+          form { padding: 12px; }
+        }
       </style>
+
       <form id="note-form" novalidate>
-        <div class="field">
+        <div class="row field">
           <label for="title">Judul</label>
           <input id="title" name="title" type="text" required autocomplete="off" aria-describedby="title-error" />
           <div class="error" id="title-error" aria-live="polite"></div>
         </div>
-        <div class="field">
+
+        <div class="row field">
           <label for="body">Isi</label>
           <textarea id="body" name="body" required rows="4" aria-describedby="body-error"></textarea>
           <div class="error" id="body-error" aria-live="polite"></div>
         </div>
-        <button type="submit"></button>
+
+        <div class="row actions">
+          <button type="submit"></button>
+        </div>
       </form>
     `;
 
@@ -126,4 +175,7 @@ class NoteForm extends HTMLElement {
     errorEl.textContent = message;
   }
 }
-customElements.define('note-form', NoteForm);
+
+if (!customElements.get('note-form')) {
+  customElements.define('note-form', NoteForm);
+}
