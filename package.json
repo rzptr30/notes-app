@@ -1,0 +1,30 @@
+{
+  "name": "notes-app",
+  "version": "1.0.0",
+  "description": "Notes App - Dicoding Submission 2 with Webpack, RESTful API, Loading Indicator, and Optional Criteria",
+  "main": "dist/js/main.js",
+  "scripts": {
+    "start-dev": "webpack serve --config webpack.dev.js",
+    "build": "webpack --config webpack.prod.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "keywords": [],
+  "author": "rzptr30",
+  "license": "MIT",
+  "dependencies": {
+    "animejs": "^3.2.2",
+    "sweetalert2": "^11.12.4"
+  },
+  "devDependencies": {
+    "clean-webpack-plugin": "^4.0.0",
+    "css-loader": "^7.1.2",
+    "html-webpack-plugin": "^5.6.4",
+    "prettier": "^3.3.3",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^5.2.2",
+    "webpack-merge": "^6.0.1"
+  }
+}

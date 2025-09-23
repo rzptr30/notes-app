@@ -3,8 +3,7 @@
 Aplikasi catatan berbasis Web Components dengan penyimpanan lokal, tema gelap/terang, filter, pencarian, import/export JSON, dialog konfirmasi kustom, serta animasi transisi (FLIP) dan micro-interactions.
 
 Demo
-- GitHub Pages: https://<username>.github.io/<repo>/
-  - Ganti <username>/<repo> dengan milikmu. Contoh: https://rzptr30.github.io/final-assessment/
+- GitHub Pages: https://rzptr30.github.io/notes-app/
 
 Fitur Utama
 - Data awal (seeding) dan persistensi via localStorage
