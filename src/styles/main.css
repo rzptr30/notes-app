@@ -1,25 +1,27 @@
-/* Minimal style to verify CSS bundling works */
-:root {
-  --bg: #0f172a;
-  --text: #e5e7eb;
+/* Util */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html, body {
-  height: 100%;
-  margin: 0;
-  background: var(--bg);
+/* Perkuat kontras tema terang di elemen umum (di luar Shadow DOM) */
+html[data-theme="light"] h1,
+html[data-theme="light"] h2,
+html[data-theme="light"] h3,
+html[data-theme="light"] h4,
+html[data-theme="light"] h5,
+html[data-theme="light"] h6,
+html[data-theme="light"] p,
+html[data-theme="light"] label,
+html[data-theme="light"] small {
   color: var(--text);
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial;
 }
 
-#app {
-  max-width: 960px;
-  margin: 24px auto;
-  padding: 16px;
+/* Jika komponen tidak mengikuti variabel, coba perkuat latar host */
+html[data-theme="light"] app-bar {
+  background: var(--surface);
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
 }
