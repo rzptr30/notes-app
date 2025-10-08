@@ -1,57 +1,105 @@
-# Notes App — Final Submission
+# Notes App — Final Submission (RESTful API v2)
 
-Aplikasi catatan berbasis Web Components dengan penyimpanan lokal, tema gelap/terang, filter, pencarian, import/export JSON, dialog konfirmasi kustom, serta animasi transisi (FLIP) dan micro-interactions.
+Aplikasi catatan berbasis Web Components, terintegrasi dengan RESTful Notes API v2 Dicoding. Mendukung autentikasi (daftar/masuk), pembuatan catatan, daftar catatan, hapus catatan, arsip/unarsip, indikator loading, notifikasi dan pesan error yang ramah, serta animasi transisi yang halus. Build dan pengembangan dikelola dengan webpack.
 
 Demo
 - GitHub Pages: https://rzptr30.github.io/notes-app/
 
 Fitur Utama
-- Data awal (seeding) dan persistensi via localStorage
-- Tambah catatan dengan validasi realtime
-- Aksi per catatan: Sematkan/Lepas, Arsip/Unarsip, Hapus
-- Filter tab: Semua, Aktif, Arsip, Disematkan
-- Pencarian judul/isi (debounced)
-- Dark/Light mode toggle (persist)
-- Badge jumlah item per tab (dinamis, mengikuti pencarian)
-- Dialog konfirmasi hapus kustom (tema-aware, aksesibel)
-- Import/Export data JSON (backup/restore)
-- Animasi transisi (enter/exit/reorder via FLIP) + micro-interactions (hover/press, ring flash, toast)
-- Responsif dan A11y dasar
+- Autentikasi:
+  - Daftar akun baru
+  - Masuk dengan email dan password
+  - Logout, dengan token disimpan aman di localStorage
+- Catatan:
+  - Tambah catatan baru (judul + isi)
+  - Lihat daftar catatan aktif
+  - Arsipkan catatan dan tampilkan daftar arsip
+  - Keluarkan catatan dari arsip
+  - Hapus catatan
+- UI/UX:
+  - Indikator loading saat proses jaringan (login, register, ambil daftar, tambah, hapus, arsip/unarsip)
+  - Pesan error dan konfirmasi yang ramah menggunakan SweetAlert2 dan komponen dialog kustom
+  - Animasi transisi halus (WAAPI/FLIP untuk re-order/masuk/keluar item)
+  - Mode gelap/terang, pencarian, filter (Semua/Aktif/Arsip/Disematkan), dan badge jumlah
+  - Responsif dan aksesibilitas dasar
 
 Teknologi
-- Vanilla JS, Web Components (Shadow DOM)
-- CSS Variables untuk tema
-- Web Animations API
-- localStorage
+- Vanilla JavaScript, Web Components (Shadow DOM)
+- Fetch API untuk komunikasi HTTP
+- RESTful Notes API v2: https://notes-api.dicoding.dev/v2
+- Webpack (dev server + production build)
+- SweetAlert2 untuk feedback error dan pesan
+- Web Animations API untuk animasi
+- Prettier untuk code formatting
 
-Struktur Komponen
-- <app-bar>: header aplikasi
-- <note-form>: formulir tambah catatan (validasi realtime)
-- <note-toolbar>: filter, pencarian, badge counts, tema, import/export
-- <note-list>: kontainer grid responsif
-- <note-item>: kartu catatan + aksi
-- <confirm-dialog>: dialog konfirmasi kustom
-- <toast-snackbar>: notifikasi ringan
+Memenuhi Kriteria Submission
+- Wajib 1: Mempertahankan kriteria submission sebelumnya (UI berbasis Web Components, layout, dsb.)
+- Wajib 2: Menggunakan RESTful API sebagai data utama (buat, dapatkan daftar, hapus). Data dummy sudah tidak dipakai.
+- Wajib 3: Menggunakan webpack sebagai module bundler
+  - html-webpack-plugin digunakan
+  - Development: npm run start-dev dengan webpack-dev-server
+  - Production: npm run build
+- Wajib 4: Menggunakan Fetch API untuk seluruh request HTTP
+- Wajib 5: Indikator loading saat request HTTP
+- Opsional:
+  - Arsip catatan (arsip/unarsip dan tab Arsip)
+  - Feedback error yang ramah (SweetAlert2)
+  - Animasi halus (WAAPI/FLIP)
+  - Prettier sebagai code formatter (.prettierrc + script format)
 
-Cara Menjalankan
-- Lokal: buka index.html dengan Live Server atau static server apa pun.
-  - Jika perlu reset data, hapus key localStorage berikut:
-    - notes-app/v1 dan notes-app/seeded
-- Produksi: aktifkan GitHub Pages (branch main, root) lalu akses URL Pages repositori.
+Struktur Proyek Singkat
+- src/
+  - index.html
+  - index.js
+  - styles/
+  - components/
+    - app-bar.js
+    - note-form.js
+    - note-item.js
+    - note-list.js
+    - note-toolbar.js
+    - confirm-dialog.js
+    - toast-snackbar.js
+    - login-form.js
+    - register-form.js
+    - loading-indicator.js
+  - data/
+    - api.js
+- webpack.common.js
+- webpack.dev.js
+- webpack.prod.js
+- .prettierrc
+- package.json
 
-Import/Export
-- Export JSON: mengunduh file berisi seluruh data catatan saat ini.
-- Import JSON: memilih file .json akan menampilkan dialog konfirmasi sebelum menggantikan data.
+Cara Menjalankan (Development)
+1) Install dependency:
+   - Windows PowerShell: jika mendapat error execution policy, jalankan per sesi:
+     Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+   - Lalu:
+     npm ci
+2) Jalankan dev server:
+   npm run start-dev
+3) Buka di browser pada alamat yang ditampilkan (contoh: http://localhost:8080).
 
-Aksesibilitas
-- Label terhubung (aria-describedby), fokus jelas (focus-visible)
-- Dialog: aria-modal, trap fokus, Escape untuk menutup
-- Kontras dan warna mengikuti tema
+Build Production
+- npm run build
+- Hasil build berada di folder dist.
 
-Catatan Penilai
-- Uji di mobile viewport dan mode incognito (cek seeding awal).
-- Semua fitur wajib dan sebagian besar opsional sudah tersedia.
-- Animasi memakai WAAPI sehingga aman untuk komponen ber-Shadow DOM.
+Penggunaan
+1) Saat pertama kali membuka aplikasi, layar autentikasi tampil.
+2) Daftar akun baru, lalu masuk menggunakan email/password yang sama.
+3) Setelah masuk, Anda dapat:
+   - Menambah catatan baru
+   - Melihat catatan aktif
+   - Mengarsipkan catatan dan melihatnya pada tab “Arsip”
+   - Mengeluarkan catatan dari arsip
+   - Menghapus catatan
+4) Gunakan kolom cari dan filter untuk memudahkan penelusuran catatan.
+5) Klik “Keluar” untuk logout dan kembali ke layar autentikasi.
+
+Catatan
+- Aplikasi ini terhubung ke RESTful Notes API v2 Dicoding. Operasi yang memerlukan otorisasi mengirimkan header Authorization: Bearer <token>.
+- Data dummy lokal tidak lagi digunakan.
 
 Lisensi
 MIT — bebas digunakan untuk pembelajaran.
