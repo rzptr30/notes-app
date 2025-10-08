@@ -5,7 +5,6 @@
     <title>Notes App</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- Early theme: set data-theme seawal mungkin agar tidak salah tema saat render awal -->
     <script>
       (function () {
         try {
@@ -25,7 +24,7 @@
 
     <link
       rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%232563eb'/%3E%3Ctext x='8' y='12' font-size='10' text-anchor='middle' fill='white' font-family='Arial'%3EN%3C/text%3E%3C/svg%3E"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%232563eb'/%3E%3Ctext x='8' y='12' font-size='10' text-anchor='middle' fill='white'%3EN%3C/text%3E%3C/svg%3E"
     />
 
     <style>
@@ -77,7 +76,6 @@
         --badge-archived-fg: #cbd5e1;
       }
 
-      /* Tekankan tema terang agar tidak kalah oleh style lain */
       html[data-theme="light"] body {
         background: var(--bg) !important;
         color: var(--text) !important;
@@ -109,6 +107,47 @@
       @media (max-width: 640px) {
         main { padding: 12px; }
       }
+
+      #auth-container {
+        display: grid;
+        min-height: calc(100dvh - 64px);
+        place-items: center;
+        padding: 20px;
+      }
+      .auth-card {
+        width: 100%;
+        max-width: 420px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+        padding: 20px 18px;
+        display: grid;
+        gap: 14px;
+      }
+      .auth-card h2 {
+        margin: 0;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .linklike {
+        background: transparent;
+        border: none;
+        color: var(--primary);
+        cursor: pointer;
+        padding: 0;
+        font: inherit;
+      }
+      .btn {
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--button-bg);
+        color: var(--button-fg);
+        cursor: pointer;
+      }
     </style>
   </head>
   <body>
@@ -118,17 +157,38 @@
 
     <app-bar title="Notes App" variant="elevated"></app-bar>
 
-    <main>
+    <div id="auth-container" hidden>
+      <section class="auth-card">
+        <h2>Masuk</h2>
+        <p class="muted">Gunakan akun Dicoding Notes API Anda untuk masuk.</p>
+        <login-form></login-form>
+
+        <hr style="border:0;border-top:1px solid var(--border);" />
+
+        <h3 style="margin:0;">Belum punya akun?</h3>
+        <p class="muted">Daftar gratis, lalu masuk untuk mulai menggunakan aplikasi.</p>
+        <register-form></register-form>
+      </section>
+    </div>
+
+    <main id="app-container">
       <note-form title-minlength="3" body-minlength="5" submit-text="Tambah Catatan"></note-form>
 
       <section class="header">
-        <h2 style="margin:0;">Daftar Catatan</h2>
-        <small>Klik Sematkan/Arsipkan/Hapus pada tiap catatan</small>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <h2 style="margin:0;">Daftar Catatan</h2>
+          <small id="user-greeting"></small>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button id="logout-btn" class="btn" title="Keluar dari akun">Keluar</button>
+        </div>
       </section>
 
       <note-toolbar filter="all" search-placeholder="Cari judul atau isi..." theme="light"></note-toolbar>
 
       <note-list min="220" gap="12"></note-list>
     </main>
+
+    <loading-indicator></loading-indicator>
   </body>
 </html>

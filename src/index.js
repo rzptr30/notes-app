@@ -1,5 +1,4 @@
 import './styles/main.css';
-
 import './components/app-bar.js';
 import './components/note-form.js';
 import './components/note-item.js';
@@ -7,52 +6,117 @@ import './components/note-list.js';
 import './components/note-toolbar.js';
 import './components/confirm-dialog.js';
 import './components/toast-snackbar.js';
-import { notesData } from './data/notes.js';
+import './components/login-form.js';
+import './components/register-form.js';
+import './components/loading-indicator.js';
+import {
+  isLoggedIn,
+  login as apiLogin,
+  register as apiRegister,
+  getUserLogged,
+  clearAccessToken,
+  getNotes,
+  getArchivedNotes,
+  createNote as apiCreateNote,
+  deleteNote as apiDeleteNote,
+  archiveNote as apiArchiveNote,
+  unarchiveNote as apiUnarchiveNote
+} from './data/api.js';
+import Swal from 'sweetalert2';
+import 'sweetalert2/dist/sweetalert2.min.css';
 
-const STORAGE_KEY = 'notes-app/v1';
-const SEEDED_KEY = 'notes-app/seeded';
 const THEME_KEY = 'notes-app/theme';
+const PINNED_KEY = 'notes-app/pinned';
 
+const authContainer = document.getElementById('auth-container');
+const appContainer = document.getElementById('app-container');
+const logoutBtn = document.getElementById('logout-btn');
+const userGreetingEl = document.getElementById('user-greeting');
+const loaderEl = document.querySelector('loading-indicator');
 
-function seedNotesFromSample() {
-  return notesData.map((n) => ({
-    ...n,
-    archived: n.archived ?? false,
-    pinned: n.pinned ?? false,
-  }));
+const confirmEl = document.createElement('confirm-dialog');
+document.body.appendChild(confirmEl);
+const toastEl = document.createElement('toast-snackbar');
+document.body.appendChild(toastEl);
+
+function showAuth() {
+  authContainer.hidden = false;
+  appContainer.hidden = true;
 }
-
-function loadNotes() {
+function showApp() {
+  authContainer.hidden = true;
+  appContainer.hidden = false;
+}
+function setLoading(active, message = 'Memuat...') {
+  if (!loaderEl) return;
+  if (active) {
+    loaderEl.setAttribute('active', '');
+    loaderEl.setAttribute('message', message);
+  } else {
+    loaderEl.removeAttribute('active');
+    loaderEl.removeAttribute('message');
+  }
+}
+async function refreshUserGreeting() {
   try {
-    const seeded = localStorage.getItem(SEEDED_KEY) === '1';
-    const raw = localStorage.getItem(STORAGE_KEY);
-
-    if (!seeded) {
-      const seededNotes = seedNotesFromSample();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(seededNotes));
-      localStorage.setItem(SEEDED_KEY, '1');
-      return seededNotes;
+    if (!isLoggedIn()) {
+      userGreetingEl.textContent = '';
+      return;
     }
-
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    const data = await getUserLogged();
+    const name = data?.user?.name || '';
+    userGreetingEl.textContent = name ? `• Masuk sebagai ${name}` : '';
   } catch {
-    const seededNotes = seedNotesFromSample();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(seededNotes));
-    localStorage.setItem(SEEDED_KEY, '1');
-    return seededNotes;
+    userGreetingEl.textContent = '';
   }
 }
 
-function saveNotes(list) {
+document.addEventListener('login-submit', async (e) => {
+  const { email, password } = e.detail || {};
+  if (!email || !password) {
+    await Swal.fire({ icon: 'warning', title: 'Lengkapi data', text: 'Email dan password wajib diisi.' });
+    return;
+  }
+  setLoading(true, 'Masuk...');
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-  } catch (e) {
-    console.warn('Gagal menyimpan ke localStorage:', e);
+    await apiLogin({ email, password });
+    await refreshUserGreeting();
+    showApp();
+    await loadAllNotesFromAPI(true);
+    toastEl.show('Berhasil masuk', { variant: 'success' });
+  } catch (err) {
+    await Swal.fire({ icon: 'error', title: 'Gagal masuk', text: err?.message || 'Gagal masuk. Coba lagi.' });
+  } finally {
+    setLoading(false);
   }
+});
+document.addEventListener('register-submit', async (e) => {
+  const { name, email, password } = e.detail || {};
+  if (!name || !email || !password) {
+    await Swal.fire({ icon: 'warning', title: 'Lengkapi data', text: 'Nama, email, dan password wajib diisi.' });
+    return;
+  }
+  setLoading(true, 'Membuat akun...');
+  try {
+    await apiRegister({ name, email, password });
+    toastEl.show('Pendaftaran berhasil. Silakan masuk.', { variant: 'success' });
+  } catch (err) {
+    await Swal.fire({ icon: 'error', title: 'Gagal mendaftar', text: err?.message || 'Gagal mendaftar. Coba lagi.' });
+  } finally {
+    setLoading(false);
+  }
+});
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', () => {
+    clearAccessToken();
+    notesActive = [];
+    notesArchived = [];
+    rerender(true);
+    showAuth();
+    userGreetingEl.textContent = '';
+    toastEl.show('Anda telah keluar', { variant: 'info' });
+  });
 }
-
 
 function getSystemTheme() {
   return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -66,68 +130,70 @@ function applyTheme(theme) {
   localStorage.setItem(THEME_KEY, t);
 }
 
+function loadPinnedMap() {
+  try {
+    const raw = localStorage.getItem(PINNED_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+function savePinnedMap() {
+  try {
+    localStorage.setItem(PINNED_KEY, JSON.stringify(pinnedMap));
+  } catch {}
+}
 
-let notes = loadNotes();
-let filterState = 'all';   
+let notesActive = [];
+let notesArchived = [];
+let pinnedMap = loadPinnedMap();
+let filterState = 'all';
 let searchQuery = '';
 let themeState = loadTheme();
 applyTheme(themeState);
-
 
 const noteListEl = document.querySelector('note-list');
 const noteFormEl = document.querySelector('note-form');
 const toolbarEl = document.querySelector('note-toolbar');
 toolbarEl.setAttribute('theme', themeState);
 
-const confirmEl = document.createElement('confirm-dialog');
-document.body.appendChild(confirmEl);
-
-const toastEl = document.createElement('toast-snackbar');
-document.body.appendChild(toastEl);
-
-
 function sortForView(list) {
   return [...list].sort((a, b) => {
-    const pa = a.pinned === true ? 1 : 0;
-    const pb = b.pinned === true ? 1 : 0;
-    if (pb !== pa) return pb - pa; 
+    const pa = pinnedMap[a.id] ? 1 : 0;
+    const pb = pinnedMap[b.id] ? 1 : 0;
+    if (pb !== pa) return pb - pa;
     const ta = new Date(a.createdAt || 0).getTime();
     const tb = new Date(b.createdAt || 0).getTime();
-    return tb - ta; 
+    return tb - ta;
   });
 }
-
-function applyFilterAndSearch(list, filter, query) {
+function applyFilterAndSearch(filter, query) {
   const q = String(query || '').trim().toLowerCase();
-  let out = list.filter((n) => {
-    if (filter === 'active') return !n.archived;
-    if (filter === 'archived') return n.archived;
-    if (filter === 'pinned') return n.pinned === true;
-    return true;
-  });
+  let base = [];
+  if (filter === 'active') base = notesActive;
+  else if (filter === 'archived') base = notesArchived;
+  else if (filter === 'pinned') base = [...notesActive, ...notesArchived].filter((n) => pinnedMap[n.id]);
+  else base = [...notesActive, ...notesArchived];
   if (q) {
-    out = out.filter(
+    base = base.filter(
       (n) =>
         (n.title || '').toLowerCase().includes(q) ||
         (n.body || '').toLowerCase().includes(q)
     );
   }
-  return out;
+  return base;
 }
-
 function updateCounts() {
-  const countAll = applyFilterAndSearch(notes, 'all', searchQuery).length;
-  const countActive = applyFilterAndSearch(notes, 'active', searchQuery).length;
-  const countArchived = applyFilterAndSearch(notes, 'archived', searchQuery).length;
-  const countPinned = applyFilterAndSearch(notes, 'pinned', searchQuery).length;
-
+  const countAll = applyFilterAndSearch('all', searchQuery).length;
+  const countActive = applyFilterAndSearch('active', searchQuery).length;
+  const countArchived = applyFilterAndSearch('archived', searchQuery).length;
+  const countPinned = applyFilterAndSearch('pinned', searchQuery).length;
   toolbarEl.setAttribute('count-all', String(countAll));
   toolbarEl.setAttribute('count-active', String(countActive));
   toolbarEl.setAttribute('count-archived', String(countArchived));
   toolbarEl.setAttribute('count-pinned', String(countPinned));
 }
-
-
 function getPositions() {
   const map = new Map();
   noteListEl.querySelectorAll('note-item').forEach((el) => {
@@ -137,7 +203,6 @@ function getPositions() {
   });
   return map;
 }
-
 function renderNotes(data) {
   noteListEl.innerHTML = '';
   const frag = document.createDocumentFragment();
@@ -148,105 +213,150 @@ function renderNotes(data) {
     item.setAttribute('title', n.title ?? '');
     item.setAttribute('body', n.body ?? '');
     if (n.archived) item.setAttribute('archived', '');
-    if (n.pinned) item.setAttribute('pinned', '');
+    if (pinnedMap[n.id]) item.setAttribute('pinned', '');
     frag.appendChild(item);
   });
   noteListEl.appendChild(frag);
 }
-
 function playFlipAnimations(oldPositions) {
   const easing = 'cubic-bezier(0.22, 1, 0.36, 1)';
   noteListEl.querySelectorAll('note-item').forEach((el) => {
     const id = el.getAttribute('note-id') || '';
     const prev = oldPositions.get(id);
     const next = el.getBoundingClientRect();
-
     if (!prev) {
-      el.animate(
-        [
-          { opacity: 0, transform: 'scale(0.98) translateY(8px)' },
-          { opacity: 1, transform: 'none' },
-        ],
-        { duration: 220, easing: 'ease-out' }
-      );
+      try {
+        el.animate(
+          [
+            { opacity: 0, transform: 'scale(0.98) translateY(8px)' },
+            { opacity: 1, transform: 'none' }
+          ],
+          { duration: 220, easing: 'ease-out' }
+        );
+      } catch {}
       return;
     }
-
     const dx = prev.left - next.left;
     const dy = prev.top - next.top;
-
     if (dx !== 0 || dy !== 0) {
-      el.animate(
-        [
-          { transform: `translate(${dx}px, ${dy}px)` },
-          { transform: 'translate(0, 0)' },
-        ],
-        { duration: 280, easing }
-      );
+      try {
+        el.animate(
+          [
+            { transform: `translate(${dx}px, ${dy}px)` },
+            { transform: 'translate(0, 0)' }
+          ],
+          { duration: 280, easing }
+        );
+      } catch {}
     }
   });
 }
-
 function rerender(withAnimation = true) {
   const oldPositions = withAnimation ? getPositions() : new Map();
   updateCounts();
-  const filtered = applyFilterAndSearch(notes, filterState, searchQuery);
+  const filtered = applyFilterAndSearch(filterState, searchQuery);
   renderNotes(filtered);
   if (withAnimation) {
     requestAnimationFrame(() => playFlipAnimations(oldPositions));
   }
 }
 
+async function loadAllNotesFromAPI(withLoading = false) {
+  if (withLoading) setLoading(true, 'Memuat catatan...');
+  try {
+    const [active, archived] = await Promise.all([getNotes(), getArchivedNotes()]);
+    notesActive = Array.isArray(active) ? active : [];
+    notesArchived = Array.isArray(archived) ? archived : [];
+    rerender(true);
+  } catch (err) {
+    await Swal.fire({ icon: 'error', title: 'Gagal memuat catatan', text: err?.message || 'Terjadi kesalahan.' });
+  } finally {
+    if (withLoading) setLoading(false);
+  }
+}
 
-noteFormEl.addEventListener('create', (e) => {
+noteFormEl.addEventListener('create', async (e) => {
   const { title, body } = e.detail;
-  const newNote = {
-    id: `notes-${Date.now()}`,
-    title: String(title || '').trim(),
-    body: String(body || '').trim(),
-    createdAt: new Date().toISOString(),
-    archived: false,
-    pinned: false,
-  };
-  notes.unshift(newNote);
-  saveNotes(notes);
-  rerender(true);
-  toastEl.show('Catatan ditambahkan', { variant: 'success' });
+  const t = String(title || '').trim();
+  const b = String(body || '').trim();
+  if (!t || !b) {
+    await Swal.fire({ icon: 'warning', title: 'Lengkapi data', text: 'Judul dan isi wajib diisi.' });
+    return;
+  }
+  setLoading(true, 'Menambahkan catatan...');
+  try {
+    const note = await apiCreateNote({ title: t, body: b });
+    if (note) {
+      notesActive.unshift(note);
+      rerender(true);
+      toastEl.show('Catatan ditambahkan', { variant: 'success' });
+    }
+  } catch (err) {
+    await Swal.fire({ icon: 'error', title: 'Gagal menambahkan', text: err?.message || 'Terjadi kesalahan.' });
+  } finally {
+    setLoading(false);
+  }
 });
 
 noteListEl.addEventListener('pin', (e) => {
   const { id, pinned } = e.detail;
-  const target = notes.find((n) => n.id === id);
-  if (target) {
-    target.pinned = pinned;
-    saveNotes(notes);
-    rerender(true);
-    toastEl.show(pinned ? 'Catatan disematkan' : 'Sematan dilepas', { variant: 'info' });
-  }
+  if (!id) return;
+  if (pinned) pinnedMap[id] = true;
+  else delete pinnedMap[id];
+  savePinnedMap();
+  rerender(true);
+  toastEl.show(pinned ? 'Catatan disematkan' : 'Sematan dilepas', { variant: 'info' });
 });
 
-noteListEl.addEventListener('archive', (e) => {
+noteListEl.addEventListener('archive', async (e) => {
   const { id, archived } = e.detail;
-  const target = notes.find((n) => n.id === id);
-  if (target) {
-    target.archived = archived;
-    saveNotes(notes);
+  if (!id) return;
+  setLoading(true, archived ? 'Mengarsipkan...' : 'Mengeluarkan dari arsip...');
+  try {
+    if (archived) {
+      await apiArchiveNote(id);
+      let idx = notesActive.findIndex((n) => n.id === id);
+      if (idx !== -1) {
+        const n = notesActive.splice(idx, 1)[0];
+        n.archived = true;
+        notesArchived.unshift(n);
+      } else {
+        const j = notesArchived.findIndex((n) => n.id === id);
+        if (j !== -1) notesArchived[j].archived = true;
+      }
+      toastEl.show('Dipindahkan ke Arsip', { variant: 'info' });
+    } else {
+      await apiUnarchiveNote(id);
+      let idx = notesArchived.findIndex((n) => n.id === id);
+      if (idx !== -1) {
+        const n = notesArchived.splice(idx, 1)[0];
+        n.archived = false;
+        notesActive.unshift(n);
+      } else {
+        const j = notesActive.findIndex((n) => n.id === id);
+        if (j !== -1) notesActive[j].archived = false;
+      }
+      toastEl.show('Dikeluarkan dari Arsip', { variant: 'info' });
+    }
     rerender(true);
-    toastEl.show(archived ? 'Dipindahkan ke Arsip' : 'Dikeluarkan dari Arsip', { variant: 'info' });
+  } catch (err) {
+    await Swal.fire({ icon: 'error', title: 'Gagal mengubah status', text: err?.message || 'Terjadi kesalahan.' });
+  } finally {
+    setLoading(false);
   }
 });
 
 noteListEl.addEventListener('delete', async (e) => {
   const { id } = e.detail;
-  const target = notes.find((n) => n.id === id);
+  if (!id) return;
+  const target = [...notesActive, ...notesArchived].find((n) => n.id === id);
   const title = (target?.title || '').trim();
   const ok = await confirmEl.openDialog({
     message: title ? `Hapus catatan “${title}”? Tindakan ini tidak bisa dibatalkan.` : 'Hapus catatan ini? Tindakan ini tidak bisa dibatalkan.',
     confirmText: 'Hapus',
-    cancelText: 'Batal',
+    cancelText: 'Batal'
   });
   if (!ok) return;
-
   const el = noteListEl.querySelector(`note-item[note-id="${id}"]`);
   if (el) {
     try {
@@ -254,18 +364,27 @@ noteListEl.addEventListener('delete', async (e) => {
         .animate(
           [
             { opacity: 1, transform: 'none' },
-            { opacity: 0, transform: 'scale(0.96) translateY(6px)' },
+            { opacity: 0, transform: 'scale(0.96) translateY(6px)' }
           ],
           { duration: 180, easing: 'ease-in' }
         )
         .finished;
     } catch {}
   }
-
-  notes = notes.filter((n) => n.id !== id);
-  saveNotes(notes);
-  rerender(true);
-  toastEl.show('Catatan dihapus', { variant: 'error', icon: '🗑️' });
+  setLoading(true, 'Menghapus catatan...');
+  try {
+    await apiDeleteNote(id);
+    notesActive = notesActive.filter((n) => n.id !== id);
+    notesArchived = notesArchived.filter((n) => n.id !== id);
+    delete pinnedMap[id];
+    savePinnedMap();
+    rerender(true);
+    toastEl.show('Catatan dihapus', { variant: 'error', icon: '🗑️' });
+  } catch (err) {
+    await Swal.fire({ icon: 'error', title: 'Gagal menghapus', text: err?.message || 'Terjadi kesalahan.' });
+  } finally {
+    setLoading(false);
+  }
 });
 
 toolbarEl.addEventListener('filter-change', (e) => {
@@ -282,114 +401,32 @@ toolbarEl.addEventListener('theme-toggle', () => {
   toolbarEl.setAttribute('theme', themeState);
   toastEl.show(themeState === 'dark' ? 'Mode gelap aktif' : 'Mode terang aktif', { variant: 'info' });
 });
-
-function nowStamp() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-}
-function exportNotes() {
-  const payload = { app: 'notes-app', version: 1, exportedAt: new Date().toISOString(), notes };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `notes-export-${nowStamp()}.json`;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    URL.revokeObjectURL(a.href);
-    a.remove();
-  }, 0);
-  toastEl.show('Export JSON dimulai', { variant: 'info' });
-}
-function toBool(v) {
-  if (typeof v === 'boolean') return v;
-  if (typeof v === 'string') return ['true', '1', 'yes', 'y'].includes(v.trim().toLowerCase());
-  if (typeof v === 'number') return v !== 0;
-  return false;
-}
-function sanitizeImportedNotes(input) {
-  let arr = null;
-  if (Array.isArray(input)) arr = input;
-  else if (input && typeof input === 'object' && Array.isArray(input.notes)) arr = input.notes;
-  if (!Array.isArray(arr)) throw new Error('Format JSON tidak valid. Gunakan array catatan atau objek { notes: [...] }.');
-
-  const result = arr.map((n, idx) => {
-    const id = (n && n.id != null) ? String(n.id) : '';
-    const createdAtRaw = n?.createdAt;
-    const created = createdAtRaw ? new Date(createdAtRaw) : new Date();
-    const createdAt = isNaN(created.getTime()) ? new Date().toISOString() : created.toISOString();
-    return {
-      id: id.trim() || `notes-${Date.now()}-${idx}`,
-      title: String(n?.title ?? '').trim(),
-      body: String(n?.body ?? ''),
-      createdAt,
-      archived: toBool(n?.archived),
-      pinned: toBool(n?.pinned),
-    };
-  });
-
-  const seen = new Set();
-  for (let i = 0; i < result.length; i++) {
-    let id = result[i].id;
-    if (!id || seen.has(id)) {
-      let suffix = 1;
-      while (seen.has(`${id || 'notes'}-${suffix}`)) suffix++;
-      id = `${id || 'notes'}-${suffix}`;
-      result[i].id = id;
-    }
-    seen.add(id);
-  }
-  return result;
-}
-
-toolbarEl.addEventListener('export-data', () => {
-  exportNotes();
+toolbarEl.addEventListener('export-data', async () => {
+  await Swal.fire({ icon: 'info', title: 'Tidak tersedia', text: 'Fitur ekspor tidak tersedia pada mode API.' });
 });
-toolbarEl.addEventListener('import-data', async (e) => {
-  const text = e.detail?.text || '';
-  const filename = e.detail?.filename || 'file.json';
-  let parsed;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    alert('File JSON tidak valid. Pastikan formatnya benar.');
-    return;
-  }
-  let newNotes;
-  try {
-    newNotes = sanitizeImportedNotes(parsed);
-  } catch (err) {
-    alert(err.message || 'Struktur data tidak sesuai.');
-    return;
-  }
-  const ok = await confirmEl.openDialog({
-    message: `Impor dari “${filename}” akan menggantikan ${notes.length} catatan saat ini dengan ${newNotes.length} catatan baru. Lanjutkan?`,
-    confirmText: 'Impor',
-    cancelText: 'Batal',
-  });
-  if (!ok) return;
-
-  notes = newNotes;
-  localStorage.setItem(SEEDED_KEY, '1');
-  saveNotes(notes);
-  rerender(true);
-  toastEl.show('Impor data berhasil', { variant: 'success' });
+toolbarEl.addEventListener('import-data', async () => {
+  await Swal.fire({ icon: 'info', title: 'Tidak tersedia', text: 'Fitur impor tidak tersedia pada mode API.' });
 });
-toolbarEl.addEventListener('import-error', (e) => {
-  alert(e.detail?.message || 'Terjadi kesalahan saat membaca file.');
+toolbarEl.addEventListener('import-error', async (e) => {
+  await Swal.fire({ icon: 'error', title: 'Gagal impor', text: e.detail?.message || 'Terjadi kesalahan saat membaca file.' });
 });
 
 window.addEventListener('storage', (ev) => {
-  if (ev.key === STORAGE_KEY) {
-    notes = loadNotes();
-    rerender(true);
-  }
   if (ev.key === THEME_KEY) {
     themeState = loadTheme();
     applyTheme(themeState);
     toolbarEl.setAttribute('theme', themeState);
   }
+  if (ev.key === PINNED_KEY) {
+    pinnedMap = loadPinnedMap();
+    rerender(true);
+  }
 });
 
-rerender(false);
+if (isLoggedIn()) {
+  showApp();
+  refreshUserGreeting();
+  loadAllNotesFromAPI(true);
+} else {
+  showAuth();
+}

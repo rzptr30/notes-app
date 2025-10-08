@@ -1,3 +1,5 @@
+import anime from 'animejs/lib/anime.es.js';
+
 class NoteToolbar extends HTMLElement {
   static get observedAttributes() {
     return [
@@ -15,11 +17,16 @@ class NoteToolbar extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this._debounceTimer = null;
+    this._prevCounts = null; // simpan nilai sebelumnya untuk animasi perubahan
     this.render();
   }
 
-  attributeChangedCallback() { this.render(); }
-  connectedCallback() { this.render(); }
+  attributeChangedCallback() {
+    this.render();
+  }
+  connectedCallback() {
+    this.render();
+  }
 
   get filter() {
     const f = (this.getAttribute('filter') || 'all').toLowerCase();
@@ -52,6 +59,8 @@ class NoteToolbar extends HTMLElement {
 
     const themeBtnText = theme === 'dark' ? '☀️ Terang' : '🌙 Gelap';
     const themeBtnTitle = theme === 'dark' ? 'Ganti ke tema terang' : 'Ganti ke tema gelap';
+
+    const prevCounts = this._prevCounts;
 
     this.shadowRoot.innerHTML = `
       <style>
@@ -101,6 +110,7 @@ class NoteToolbar extends HTMLElement {
           background: var(--badge-archived-bg);
           color: var(--badge-archived-fg);
           transition: background-color .12s ease, color .12s ease;
+          will-change: transform;
         }
         .tabs button[aria-pressed="true"] .tab-badge {
           background: #ffffff; color: #111827;
@@ -158,6 +168,11 @@ class NoteToolbar extends HTMLElement {
         </div>
       </div>
     `;
+
+    // Setelah render, animasikan badge yang berubah
+    this._animateCountChanges(prevCounts, { all, active, archived, pinned });
+
+    this._prevCounts = { all, active, archived, pinned };
     this.attachEvents();
   }
 
@@ -167,16 +182,48 @@ class NoteToolbar extends HTMLElement {
     return `<button type="button" data-filter="${value}" aria-pressed="${pressed}">${label}${badge}</button>`;
   }
 
+  _animateCountChanges(prev, curr) {
+    if (!prev) return; // render pertama: tidak perlu animasi perbandingan
+    const keys = [
+      ['all', 'all'],
+      ['active', 'active'],
+      ['archived', 'archived'],
+      ['pinned', 'pinned'],
+    ];
+    for (const [key, filterVal] of keys) {
+      const before = prev[key];
+      const after = curr[key];
+      if (Number.isFinite(before) && Number.isFinite(after) && before !== after) {
+        const badge = this.shadowRoot.querySelector(`.tabs button[data-filter="${filterVal}"] .tab-badge`);
+        if (!badge) continue;
+        // Animasi pulse halus menggunakan animejs
+        anime.remove(badge);
+        anime({
+          targets: badge,
+          scale: [
+            { value: 1, duration: 0 },
+            { value: 1.12, duration: 120, easing: 'easeOutCubic' },
+            { value: 1, duration: 180, easing: 'easeOutBack' },
+          ],
+        });
+      }
+    }
+  }
+
   attachEvents() {
     const tabs = this.shadowRoot.querySelectorAll('.tabs button');
-    tabs.forEach(btn => {
+    tabs.forEach((btn) => {
       btn.addEventListener('click', () => {
         const f = btn.getAttribute('data-filter');
-        tabs.forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+        tabs.forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
         this.setAttribute('filter', f);
-        this.dispatchEvent(new CustomEvent('filter-change', {
-          bubbles: true, composed: true, detail: { filter: f }
-        }));
+        this.dispatchEvent(
+          new CustomEvent('filter-change', {
+            bubbles: true,
+            composed: true,
+            detail: { filter: f },
+          })
+        );
       });
     });
 
@@ -185,9 +232,13 @@ class NoteToolbar extends HTMLElement {
       clearTimeout(this._debounceTimer);
       this._debounceTimer = setTimeout(() => {
         const query = input.value || '';
-        this.dispatchEvent(new CustomEvent('search-change', {
-          bubbles: true, composed: true, detail: { query }
-        }));
+        this.dispatchEvent(
+          new CustomEvent('search-change', {
+            bubbles: true,
+            composed: true,
+            detail: { query },
+          })
+        );
       }, 250);
     });
 
@@ -210,15 +261,23 @@ class NoteToolbar extends HTMLElement {
       const reader = new FileReader();
       reader.onload = () => {
         const text = String(reader.result || '');
-        this.dispatchEvent(new CustomEvent('import-data', {
-          bubbles: true, composed: true, detail: { text, filename: file.name }
-        }));
+        this.dispatchEvent(
+          new CustomEvent('import-data', {
+            bubbles: true,
+            composed: true,
+            detail: { text, filename: file.name },
+          })
+        );
         fileInput.value = '';
       };
       reader.onerror = () => {
-        this.dispatchEvent(new CustomEvent('import-error', {
-          bubbles: true, composed: true, detail: { message: 'Gagal membaca file.' }
-        }));
+        this.dispatchEvent(
+          new CustomEvent('import-error', {
+            bubbles: true,
+            composed: true,
+            detail: { message: 'Gagal membaca file.' },
+          })
+        );
         fileInput.value = '';
       };
       reader.readAsText(file);
