@@ -14,20 +14,20 @@ module.exports = merge(common, {
     static: {
       directory: path.join(__dirname, 'dist'),
       publicPath: '/',
-      watch: true
+      watch: true,
     },
     historyApiFallback: {
       index: '/index.html',
-      disableDotRule: true
+      disableDotRule: true,
     },
     // Tulis output webpack ke disk, bukan hanya in-memory
     devMiddleware: {
       writeToDisk: true,
-      publicPath: '/'
+      publicPath: '/',
     },
     client: {
       overlay: true,
-      logging: 'info'
-    }
-  }
+      logging: 'info',
+    },
+  },
 });

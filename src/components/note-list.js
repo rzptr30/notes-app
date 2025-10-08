@@ -1,5 +1,7 @@
 class NoteList extends HTMLElement {
-  static get observedAttributes() { return ['min', 'gap']; }
+  static get observedAttributes() {
+    return ['min', 'gap'];
+  }
 
   constructor() {
     super();
@@ -7,7 +9,9 @@ class NoteList extends HTMLElement {
     this.render();
   }
 
-  attributeChangedCallback() { this.render(); }
+  attributeChangedCallback() {
+    this.render();
+  }
 
   render() {
     const min = this.getAttribute('min') ?? '220';

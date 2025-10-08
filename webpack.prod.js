@@ -5,9 +5,9 @@ module.exports = merge(common, {
   mode: 'production',
   devtool: 'source-map',
   output: {
-    publicPath: '/notes-app/'
+    publicPath: '/notes-app/',
   },
   optimization: {
-    splitChunks: { chunks: 'all' }
-  }
+    splitChunks: { chunks: 'all' },
+  },
 });

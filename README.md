@@ -3,9 +3,11 @@
 Aplikasi catatan berbasis Web Components, terintegrasi dengan RESTful Notes API v2 Dicoding. Mendukung autentikasi (daftar/masuk), pembuatan catatan, daftar catatan, hapus catatan, arsip/unarsip, indikator loading, notifikasi dan pesan error yang ramah, serta animasi transisi yang halus. Build dan pengembangan dikelola dengan webpack.
 
 Demo
+
 - GitHub Pages: https://rzptr30.github.io/notes-app/
 
 Fitur Utama
+
 - Autentikasi:
   - Daftar akun baru
   - Masuk dengan email dan password
@@ -24,6 +26,7 @@ Fitur Utama
   - Responsif dan aksesibilitas dasar
 
 Teknologi
+
 - Vanilla JavaScript, Web Components (Shadow DOM)
 - Fetch API untuk komunikasi HTTP
 - RESTful Notes API v2: https://notes-api.dicoding.dev/v2
@@ -33,6 +36,7 @@ Teknologi
 - Prettier untuk code formatting
 
 Memenuhi Kriteria Submission
+
 - Wajib 1: Mempertahankan kriteria submission sebelumnya (UI berbasis Web Components, layout, dsb.)
 - Wajib 2: Menggunakan RESTful API sebagai data utama (buat, dapatkan daftar, hapus). Data dummy sudah tidak dipakai.
 - Wajib 3: Menggunakan webpack sebagai module bundler
@@ -48,6 +52,7 @@ Memenuhi Kriteria Submission
   - Prettier sebagai code formatter (.prettierrc + script format)
 
 Struktur Proyek Singkat
+
 - src/
   - index.html
   - index.js
@@ -72,32 +77,36 @@ Struktur Proyek Singkat
 - package.json
 
 Cara Menjalankan (Development)
-1) Install dependency:
+
+1. Install dependency:
    - Windows PowerShell: jika mendapat error execution policy, jalankan per sesi:
      Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
    - Lalu:
      npm ci
-2) Jalankan dev server:
+2. Jalankan dev server:
    npm run start-dev
-3) Buka di browser pada alamat yang ditampilkan (contoh: http://localhost:8080).
+3. Buka di browser pada alamat yang ditampilkan (contoh: http://localhost:8080).
 
 Build Production
+
 - npm run build
 - Hasil build berada di folder dist.
 
 Penggunaan
-1) Saat pertama kali membuka aplikasi, layar autentikasi tampil.
-2) Daftar akun baru, lalu masuk menggunakan email/password yang sama.
-3) Setelah masuk, Anda dapat:
+
+1. Saat pertama kali membuka aplikasi, layar autentikasi tampil.
+2. Daftar akun baru, lalu masuk menggunakan email/password yang sama.
+3. Setelah masuk, Anda dapat:
    - Menambah catatan baru
    - Melihat catatan aktif
    - Mengarsipkan catatan dan melihatnya pada tab “Arsip”
    - Mengeluarkan catatan dari arsip
    - Menghapus catatan
-4) Gunakan kolom cari dan filter untuk memudahkan penelusuran catatan.
-5) Klik “Keluar” untuk logout dan kembali ke layar autentikasi.
+4. Gunakan kolom cari dan filter untuk memudahkan penelusuran catatan.
+5. Klik “Keluar” untuk logout dan kembali ke layar autentikasi.
 
 Catatan
+
 - Aplikasi ini terhubung ke RESTful Notes API v2 Dicoding. Operasi yang memerlukan otorisasi mengirimkan header Authorization: Bearer <token>.
 - Data dummy lokal tidak lagi digunakan.
 

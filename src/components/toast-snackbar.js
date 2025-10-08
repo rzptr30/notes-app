@@ -66,7 +66,10 @@ class ToastSnackbar extends HTMLElement {
 
       try {
         await el.animate(
-          [{ transform: 'translateY(8px)', opacity: 0 }, { transform: 'translateY(0)', opacity: 1 }],
+          [
+            { transform: 'translateY(8px)', opacity: 0 },
+            { transform: 'translateY(0)', opacity: 1 },
+          ],
           { duration: 180, easing: 'cubic-bezier(0.22,1,0.36,1)' }
         ).finished;
       } catch {}
@@ -75,7 +78,10 @@ class ToastSnackbar extends HTMLElement {
 
       try {
         await el.animate(
-          [{ transform: 'translateY(0)', opacity: 1 }, { transform: 'translateY(6px)', opacity: 0 }],
+          [
+            { transform: 'translateY(0)', opacity: 1 },
+            { transform: 'translateY(6px)', opacity: 0 },
+          ],
           { duration: 160, easing: 'ease-in' }
         ).finished;
       } catch {}
@@ -94,8 +100,9 @@ class ToastSnackbar extends HTMLElement {
   }
 
   _escape(s) {
-    return s.replace(/[&<>"']/g, (m) =>
-      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])
+    return s.replace(
+      /[&<>"']/g,
+      (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m]
     );
   }
 }

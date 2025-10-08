@@ -1,5 +1,7 @@
 class AppBar extends HTMLElement {
-  static get observedAttributes() { return ['title', 'variant']; }
+  static get observedAttributes() {
+    return ['title', 'variant'];
+  }
 
   constructor() {
     super();
@@ -7,7 +9,9 @@ class AppBar extends HTMLElement {
     this.render();
   }
 
-  attributeChangedCallback() { this.render(); }
+  attributeChangedCallback() {
+    this.render();
+  }
 
   render() {
     const title = this.getAttribute('title') ?? 'Notes App';

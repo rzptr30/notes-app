@@ -194,7 +194,9 @@ class NoteToolbar extends HTMLElement {
       const before = prev[key];
       const after = curr[key];
       if (Number.isFinite(before) && Number.isFinite(after) && before !== after) {
-        const badge = this.shadowRoot.querySelector(`.tabs button[data-filter="${filterVal}"] .tab-badge`);
+        const badge = this.shadowRoot.querySelector(
+          `.tabs button[data-filter="${filterVal}"] .tab-badge`
+        );
         if (!badge) continue;
         // Animasi pulse halus menggunakan animejs
         anime.remove(badge);

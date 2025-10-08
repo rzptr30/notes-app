@@ -1,5 +1,7 @@
 class NoteForm extends HTMLElement {
-  static get observedAttributes() { return ['submit-text', 'title-minlength', 'body-minlength']; }
+  static get observedAttributes() {
+    return ['submit-text', 'title-minlength', 'body-minlength'];
+  }
 
   constructor() {
     super();
@@ -140,8 +142,12 @@ class NoteForm extends HTMLElement {
   }
 
   attachEvents() {
-    this.titleInput.addEventListener('input', () => this.validateField(this.titleInput, this.titleError));
-    this.bodyInput.addEventListener('input', () => this.validateField(this.bodyInput, this.bodyError));
+    this.titleInput.addEventListener('input', () =>
+      this.validateField(this.titleInput, this.titleError)
+    );
+    this.bodyInput.addEventListener('input', () =>
+      this.validateField(this.bodyInput, this.bodyError)
+    );
 
     this.form.addEventListener('submit', (e) => {
       e.preventDefault();

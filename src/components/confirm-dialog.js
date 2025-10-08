@@ -39,7 +39,9 @@ class ConfirmDialog extends HTMLElement {
     this.setAttribute('cancel-text', cancelText);
 
     if (typeof this._resolver === 'function') {
-      try { this._resolver(false); } catch {}
+      try {
+        this._resolver(false);
+      } catch {}
       this._resolver = null;
     }
 

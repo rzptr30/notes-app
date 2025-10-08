@@ -34,6 +34,11 @@ const logoutBtn = document.getElementById('logout-btn');
 const userGreetingEl = document.getElementById('user-greeting');
 const loaderEl = document.querySelector('loading-indicator');
 
+const loginSection = document.getElementById('login-section');
+const registerSection = document.getElementById('register-section');
+const switchToRegisterBtn = document.getElementById('switch-to-register');
+const switchToLoginBtn = document.getElementById('switch-to-login');
+
 const confirmEl = document.createElement('confirm-dialog');
 document.body.appendChild(confirmEl);
 const toastEl = document.createElement('toast-snackbar');
@@ -46,6 +51,16 @@ function showAuth() {
 function showApp() {
   authContainer.hidden = true;
   appContainer.hidden = false;
+}
+function showLogin() {
+  showAuth();
+  if (loginSection) loginSection.hidden = false;
+  if (registerSection) registerSection.hidden = true;
+}
+function showRegister() {
+  showAuth();
+  if (loginSection) loginSection.hidden = true;
+  if (registerSection) registerSection.hidden = false;
 }
 function setLoading(active, message = 'Memuat...') {
   if (!loaderEl) return;
@@ -100,19 +115,22 @@ document.addEventListener('register-submit', async (e) => {
   try {
     await apiRegister({ name, email, password });
     toastEl.show('Pendaftaran berhasil. Silakan masuk.', { variant: 'success' });
+    showLogin();
   } catch (err) {
     await Swal.fire({ icon: 'error', title: 'Gagal mendaftar', text: err?.message || 'Gagal mendaftar. Coba lagi.' });
   } finally {
     setLoading(false);
   }
 });
+if (switchToRegisterBtn) switchToRegisterBtn.addEventListener('click', () => showRegister());
+if (switchToLoginBtn) switchToLoginBtn.addEventListener('click', () => showLogin());
 if (logoutBtn) {
   logoutBtn.addEventListener('click', () => {
     clearAccessToken();
     notesActive = [];
     notesArchived = [];
     rerender(true);
-    showAuth();
+    showLogin();
     userGreetingEl.textContent = '';
     toastEl.show('Anda telah keluar', { variant: 'info' });
   });
@@ -428,5 +446,5 @@ if (isLoggedIn()) {
   refreshUserGreeting();
   loadAllNotesFromAPI(true);
 } else {
-  showAuth();
+  showLogin();
 }

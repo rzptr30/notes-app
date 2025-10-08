@@ -1,5 +1,7 @@
 class NoteItem extends HTMLElement {
-  static get observedAttributes() { return ['note-id', 'title', 'body', 'pinned', 'archived']; }
+  static get observedAttributes() {
+    return ['note-id', 'title', 'body', 'pinned', 'archived'];
+  }
 
   constructor() {
     super();
@@ -7,7 +9,9 @@ class NoteItem extends HTMLElement {
     this.render();
   }
 
-  attributeChangedCallback() { this.render(); }
+  attributeChangedCallback() {
+    this.render();
+  }
 
   render() {
     const id = this.getAttribute('note-id') ?? '';
@@ -94,23 +98,35 @@ class NoteItem extends HTMLElement {
     };
 
     this.shadowRoot.querySelector('.pin-btn').addEventListener('click', () => {
-      flash('rgba(234,179,8,0.3)'); 
-      this.dispatchEvent(new CustomEvent('pin', {
-        bubbles: true, composed: true, detail: { id, pinned: !pinned },
-      }));
+      flash('rgba(234,179,8,0.3)');
+      this.dispatchEvent(
+        new CustomEvent('pin', {
+          bubbles: true,
+          composed: true,
+          detail: { id, pinned: !pinned },
+        })
+      );
     });
 
     this.shadowRoot.querySelector('.archive-btn').addEventListener('click', () => {
-      flash('rgba(96,165,250,0.28)'); 
-      this.dispatchEvent(new CustomEvent('archive', {
-        bubbles: true, composed: true, detail: { id, archived: !archived },
-      }));
+      flash('rgba(96,165,250,0.28)');
+      this.dispatchEvent(
+        new CustomEvent('archive', {
+          bubbles: true,
+          composed: true,
+          detail: { id, archived: !archived },
+        })
+      );
     });
 
     this.shadowRoot.querySelector('.delete-btn').addEventListener('click', () => {
-      this.dispatchEvent(new CustomEvent('delete', {
-        bubbles: true, composed: true, detail: { id },
-      }));
+      this.dispatchEvent(
+        new CustomEvent('delete', {
+          bubbles: true,
+          composed: true,
+          detail: { id },
+        })
+      );
     });
   }
 }
