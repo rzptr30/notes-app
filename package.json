@@ -14,7 +14,10 @@
   "license": "MIT",
   "dependencies": {
     "animejs": "^3.2.2",
-    "sweetalert2": "^11.12.4"
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "sweetalert2": "^11.12.4",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "clean-webpack-plugin": "^4.0.0",

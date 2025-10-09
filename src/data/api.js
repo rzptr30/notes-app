@@ -1,18 +1,32 @@
-// src/data/api.js
-// Modul API terpusat untuk Notes API v2 Dicoding
-// Dokumentasi API: https://notes-api.dicoding.dev/v2
+// API helper with easy BASE_URL override for development/testing.
+// Priority for BASE_URL resolution (highest → lowest):
+// 1. window.__NOTES_API_BASE__
+// 2. localStorage['NOTES_API_BASE']
+// 3. process.env.NODE_ENV === 'development' ? '/v2' : 'https://notes-api.dicoding.dev/v2'
 
-const BASE_URL = 'https://notes-api.dicoding.dev/v2';
+const DEFAULT_BASE =
+  process.env.NODE_ENV === 'development'
+    ? '/v2'
+    : 'https://notes-api.dicoding.dev/v2';
+
+function resolveBaseUrl() {
+  try {
+    if (typeof window !== 'undefined') {
+      if (window.__NOTES_API_BASE__) return window.__NOTES_API_BASE__;
+      const fromStorage = localStorage.getItem('NOTES_API_BASE');
+      if (fromStorage) return fromStorage;
+    }
+  } catch (_) {}
+  return DEFAULT_BASE;
+}
+
+const BASE_URL = resolveBaseUrl();
 const ACCESS_TOKEN_KEY = 'accessToken';
 
-// ---------------------------------------------
-// Token utilities
-// ---------------------------------------------
 export function putAccessToken(token) {
   try {
     localStorage.setItem(ACCESS_TOKEN_KEY, token);
   } catch {
-    // fallback jika localStorage tidak tersedia
     window.__ACCESS_TOKEN__ = token;
   }
 }
@@ -37,10 +51,7 @@ export function isLoggedIn() {
   return Boolean(getAccessToken());
 }
 
-// ---------------------------------------------
-// Fetch wrapper
-// ---------------------------------------------
-async function fetchJSON(path, { method = 'GET', headers = {}, body, auth = false } = {}) {
+async function fetchJSON(path, { method = 'GET', headers = {}, body, auth = false, timeout = 15000 } = {}) {
   const url = `${BASE_URL}${path}`;
 
   const finalHeaders = {
@@ -48,7 +59,6 @@ async function fetchJSON(path, { method = 'GET', headers = {}, body, auth = fals
     ...headers,
   };
 
-  // Set JSON content-type hanya bila ada body
   const hasBody = body !== undefined && body !== null;
   if (hasBody && !finalHeaders['Content-Type']) {
     finalHeaders['Content-Type'] = 'application/json';
@@ -62,14 +72,29 @@ async function fetchJSON(path, { method = 'GET', headers = {}, body, auth = fals
     finalHeaders.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(url, {
-    method,
-    headers: finalHeaders,
-    body: hasBody ? JSON.stringify(body) : undefined,
-  });
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
 
-  // Coba parse JSON; beberapa error bisa tidak mengembalikan JSON valid
-  let json;
+  let response;
+  try {
+    response = await fetch(url, {
+      method,
+      headers: finalHeaders,
+      body: hasBody ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+      mode: 'cors',
+      credentials: 'omit',
+    });
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error('Network timeout: request took too long. Periksa koneksi Anda.');
+    }
+    throw new Error(`Network error: ${err.message || 'Gagal menghubungi server.'}`);
+  } finally {
+    clearTimeout(id);
+  }
+
+  let json = null;
   try {
     json = await response.json();
   } catch {
@@ -78,78 +103,55 @@ async function fetchJSON(path, { method = 'GET', headers = {}, body, auth = fals
 
   if (!response.ok) {
     const message =
-      (json && (json.message || json.error || json.status)) ||
+      (json && (json.message || json.error || (json.data && json.data.message))) ||
       `${response.status} ${response.statusText}`;
     throw new Error(message);
   }
 
-  // Umumnya API mengembalikan { data: ... }
-  // Kembalikan data jika ada; jika tidak ada, kembalikan json utuh.
   return json && (json.data ?? json);
 }
 
-// ---------------------------------------------
-// Auth & User
-// ---------------------------------------------
 export async function register({ name, email, password }) {
-  // POST /users
-  const data = await fetchJSON('/users', {
+  return await fetchJSON('/users', {
     method: 'POST',
     body: { name, email, password },
   });
-  // Biasanya mengembalikan data: { user }
-  return data;
 }
 
 export async function login({ email, password }) {
-  // POST /authentications
   const data = await fetchJSON('/authentications', {
     method: 'POST',
     body: { email, password },
   });
-  // Biasanya mengembalikan data: { accessToken }
   const token = data?.accessToken;
   if (token) putAccessToken(token);
   return token;
 }
 
 export async function getUserLogged() {
-  // GET /users/me
-  const data = await fetchJSON('/users/me', { auth: true });
-  // Biasanya data: { user }
-  return data;
+  return await fetchJSON('/users/me', { auth: true });
 }
 
-// ---------------------------------------------
-// Notes (aktif & arsip)
-// ---------------------------------------------
 export async function getNotes() {
-  // GET /notes
-  const data = await fetchJSON('/notes', { auth: true });
-  // Biasanya data: { notes: [...] }
-  return data?.notes ?? [];
+  const d = await fetchJSON('/notes', { auth: true });
+  return d?.notes ?? [];
 }
 
 export async function getArchivedNotes() {
-  // GET /notes/archived
-  const data = await fetchJSON('/notes/archived', { auth: true });
-  // Biasanya data: { notes: [...] }
-  return data?.notes ?? [];
+  const d = await fetchJSON('/notes/archived', { auth: true });
+  return d?.notes ?? [];
 }
 
 export async function createNote({ title, body }) {
-  // POST /notes
-  const data = await fetchJSON('/notes', {
+  const d = await fetchJSON('/notes', {
     method: 'POST',
     auth: true,
     body: { title, body },
   });
-  // Biasanya data: { note }
-  return data?.note ?? null;
+  return d?.note ?? null;
 }
 
 export async function deleteNote(id) {
-  // DELETE /notes/{id}
   if (!id) throw new Error('Note id is required');
   await fetchJSON(`/notes/${encodeURIComponent(id)}`, {
     method: 'DELETE',
@@ -159,7 +161,6 @@ export async function deleteNote(id) {
 }
 
 export async function archiveNote(id) {
-  // POST /notes/{id}/archive
   if (!id) throw new Error('Note id is required');
   await fetchJSON(`/notes/${encodeURIComponent(id)}/archive`, {
     method: 'POST',
@@ -169,7 +170,6 @@ export async function archiveNote(id) {
 }
 
 export async function unarchiveNote(id) {
-  // POST /notes/{id}/unarchive
   if (!id) throw new Error('Note id is required');
   await fetchJSON(`/notes/${encodeURIComponent(id)}/unarchive`, {
     method: 'POST',
@@ -178,20 +178,14 @@ export async function unarchiveNote(id) {
   return true;
 }
 
-// ---------------------------------------------
-// Default export (opsional, jika Anda suka gaya objek)
-// ---------------------------------------------
 const api = {
-  // token utils
   putAccessToken,
   getAccessToken,
   clearAccessToken,
   isLoggedIn,
-  // auth
   register,
   login,
   getUserLogged,
-  // notes
   getNotes,
   getArchivedNotes,
   createNote,

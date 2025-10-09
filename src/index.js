@@ -47,10 +47,12 @@ document.body.appendChild(toastEl);
 function showAuth() {
   authContainer.hidden = false;
   appContainer.hidden = true;
+  document.documentElement.setAttribute('data-appauth', 'login');
 }
 function showApp() {
   authContainer.hidden = true;
   appContainer.hidden = false;
+  document.documentElement.setAttribute('data-appauth', 'app');
 }
 function showLogin() {
   showAuth();
@@ -89,6 +91,7 @@ async function refreshUserGreeting() {
 document.addEventListener('login-submit', async (e) => {
   const { email, password } = e.detail || {};
   if (!email || !password) {
+    setLoading(false);
     await Swal.fire({ icon: 'warning', title: 'Lengkapi data', text: 'Email dan password wajib diisi.' });
     return;
   }
@@ -100,14 +103,17 @@ document.addEventListener('login-submit', async (e) => {
     await loadAllNotesFromAPI(true);
     toastEl.show('Berhasil masuk', { variant: 'success' });
   } catch (err) {
+    setLoading(false);
     await Swal.fire({ icon: 'error', title: 'Gagal masuk', text: err?.message || 'Gagal masuk. Coba lagi.' });
   } finally {
     setLoading(false);
   }
 });
+
 document.addEventListener('register-submit', async (e) => {
   const { name, email, password } = e.detail || {};
   if (!name || !email || !password) {
+    setLoading(false);
     await Swal.fire({ icon: 'warning', title: 'Lengkapi data', text: 'Nama, email, dan password wajib diisi.' });
     return;
   }
@@ -117,11 +123,13 @@ document.addEventListener('register-submit', async (e) => {
     toastEl.show('Pendaftaran berhasil. Silakan masuk.', { variant: 'success' });
     showLogin();
   } catch (err) {
-    await Swal.fire({ icon: 'error', title: 'Gagal mendaftar', text: err?.message || 'Gagal mendaftar. Coba lagi.' });
+    setLoading(false);
+    await Swal.fire({ icon: 'error', title: 'Gagal mendaftar', text: err?.message || 'Terjadi kesalahan jaringan.' });
   } finally {
     setLoading(false);
   }
 });
+
 if (switchToRegisterBtn) switchToRegisterBtn.addEventListener('click', () => showRegister());
 if (switchToLoginBtn) switchToLoginBtn.addEventListener('click', () => showLogin());
 if (logoutBtn) {
@@ -287,6 +295,7 @@ async function loadAllNotesFromAPI(withLoading = false) {
     notesArchived = Array.isArray(archived) ? archived : [];
     rerender(true);
   } catch (err) {
+    if (withLoading) setLoading(false);
     await Swal.fire({ icon: 'error', title: 'Gagal memuat catatan', text: err?.message || 'Terjadi kesalahan.' });
   } finally {
     if (withLoading) setLoading(false);
@@ -298,6 +307,7 @@ noteFormEl.addEventListener('create', async (e) => {
   const t = String(title || '').trim();
   const b = String(body || '').trim();
   if (!t || !b) {
+    setLoading(false);
     await Swal.fire({ icon: 'warning', title: 'Lengkapi data', text: 'Judul dan isi wajib diisi.' });
     return;
   }
@@ -310,6 +320,7 @@ noteFormEl.addEventListener('create', async (e) => {
       toastEl.show('Catatan ditambahkan', { variant: 'success' });
     }
   } catch (err) {
+    setLoading(false);
     await Swal.fire({ icon: 'error', title: 'Gagal menambahkan', text: err?.message || 'Terjadi kesalahan.' });
   } finally {
     setLoading(false);
@@ -358,6 +369,7 @@ noteListEl.addEventListener('archive', async (e) => {
     }
     rerender(true);
   } catch (err) {
+    setLoading(false);
     await Swal.fire({ icon: 'error', title: 'Gagal mengubah status', text: err?.message || 'Terjadi kesalahan.' });
   } finally {
     setLoading(false);
@@ -399,6 +411,7 @@ noteListEl.addEventListener('delete', async (e) => {
     rerender(true);
     toastEl.show('Catatan dihapus', { variant: 'error', icon: '🗑️' });
   } catch (err) {
+    setLoading(false);
     await Swal.fire({ icon: 'error', title: 'Gagal menghapus', text: err?.message || 'Terjadi kesalahan.' });
   } finally {
     setLoading(false);
